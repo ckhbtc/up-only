@@ -3,6 +3,14 @@ export function shortenError(message, maxLength = 140) {
   return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
 }
 
+export function userFacingTradeError(message) {
+  const text = message || 'Unknown error';
+  if (/no quotes received within wait time/i.test(text)) {
+    return 'Order failed, please try again.';
+  }
+  return text;
+}
+
 export function getOpenTradeStatus(result) {
   const tpRequested = Boolean(result?.takeProfit?.requested);
   const tpFailed = tpRequested && !result.takeProfit?.placed;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getOpenTradeStatus, shortenError } from '../src/services/tradeResult.js';
+import { getOpenTradeStatus, shortenError, userFacingTradeError } from '../src/services/tradeResult.js';
 
 test('getOpenTradeStatus returns success when open and take-profit is verified active', () => {
   assert.deepEqual(
@@ -62,4 +62,11 @@ test('shortenError caps long exchange errors', () => {
   const shortened = shortenError('x'.repeat(200), 20);
   assert.equal(shortened.length, 20);
   assert.equal(shortened.endsWith('...'), true);
+});
+
+test('userFacingTradeError hides RFQ no-quote timeout internals', () => {
+  assert.equal(
+    userFacingTradeError('no quotes received within wait time [rfqID: 1781661313632 - taker: inj1zsgf4tgrcn0ur255dmetmdhep9ck99hmg3ngd7]'),
+    'Order failed, please try again.'
+  );
 });

@@ -21,7 +21,7 @@ import {
   tradeOpenRfq,
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
-import { getOpenTradeStatus } from './services/tradeResult';
+import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
 import useMarketStore from './stores/marketStore';
 import useSessionStore from './stores/sessionStore';
@@ -343,6 +343,7 @@ export default function App() {
 
       clearTxStatusSoon();
     } catch (err) {
+      const message = userFacingTradeError(err.message);
       if (optimisticPositionId) {
         useMarketStore.getState().removeOptimisticPosition(optimisticPositionId);
       }
@@ -351,8 +352,8 @@ export default function App() {
         delete next[marketId];
         return next;
       });
-      markCardError(marketId, err.message);
-      setTxStatus({ type: 'error', message: err.message });
+      markCardError(marketId, message);
+      setTxStatus({ type: 'error', message });
       clearTxStatusSoon();
     }
   }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, markCardError]);
@@ -416,10 +417,11 @@ export default function App() {
 
       clearTxStatusSoon();
     } catch (err) {
+      const message = userFacingTradeError(err.message);
       if (closeMatched) {
         useMarketStore.getState().removeOptimisticClosedPosition(optimisticCloseId, position);
       }
-      setTxStatus({ type: 'error', message: err.message });
+      setTxStatus({ type: 'error', message });
       clearTxStatusSoon();
     }
   }, [connected, injAddress, refreshBalances, clearTxStatusSoon]);
