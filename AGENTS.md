@@ -1,4 +1,4 @@
-# Up Only
+# UpOnly
 
 Long-only max-leverage trading UI on Injective mainnet.
 

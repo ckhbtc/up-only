@@ -1,4 +1,4 @@
-# Up Only
+# UpOnly
 
 Long-only max-leverage trading UI on Injective. Users connect a wallet, authorize
 autosign once, pick an asset, enter an amount, and open a max-leverage long via
@@ -48,7 +48,7 @@ by the connected `inj1` granter, and asks the user to sign AuthZ grants once.
 After that, opens and closes are signed locally as `MsgAuthzExec` and broadcast
 through Injective fee delegation. The server does not hold trading keys.
 
-Open orders route through RFQ first. Up Only forces `side: 'long'` and uses the
+Open orders route through RFQ first. UpOnly forces `side: 'long'` and uses the
 market's max stepped leverage from `src/services/upOnly.js`. Position close
 still sends the opposite order as required by the exchange, but the UI only
 presents long positions as app-managed positions.
@@ -86,4 +86,4 @@ adds a `DEV` pill and exposes "Cash Out All" for local testing.
 ## Deployment
 
 Deployment details belong in local-only `DEPLOYMENT.md`, which is gitignored.
-This repo currently has no production host assigned.
+Production is served at `https://uponly.inj.so/`.

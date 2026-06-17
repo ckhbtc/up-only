@@ -1,229 +1,115 @@
-# Up Only Design Handoff
+# UpOnly Design Handoff
 
 ## Product Summary
 
-Up Only is a stripped-down Injective trading app for one action: open a
-max-leverage long on a perpetual market. It inherits BET's RFQ execution,
+UpOnly is a long-only, max-leverage Injective perpetual trading app. The user
+connects a wallet, authorizes autosign once, types a USDC amount on a market
+card, and clicks the inline UpOnly CTA. The app keeps BET's RFQ execution,
 AuthZ autosign, fee delegation, bridge, faucet, wallet, and position close
-plumbing, but removes short entry, leverage selection, target-win inputs, and
-confirmation friction.
+plumbing.
 
-## Design Goal
+## Creative Direction
 
-Make the app feel direct, high-conviction, and operationally clear. The user
-should understand within one screen that every trade is:
+The high-fidelity direction is an early-2000s dealership blowout adapted for a
+trading lot. It should feel loud, direct, and intentionally commercial:
 
-- Long only
-- Max leverage only
-- One-click after autosign authorization
-- RFQ-routed and gas-free after setup
+- Big sale signage and sticker language.
+- Heavy black borders, hard shadows, and small rotations.
+- Web-safe display typography, led by Impact-style headings.
+- Yellow, red, green, and cobalt as the main signals.
+- Fast market scanning with no separate order panel.
 
-The interface should feel more like a focused trading console than a betting
-game. It can carry energy, but the controls should stay sparse and hard to
-misread.
-
-## Target User
-
-Crypto-native traders who already understand perpetuals and want the fastest
-possible way to express upside exposure. They care about speed, current price,
-liquidation distance, wallet state, and clean exits.
+Use the name `UpOnly` everywhere. Prior product-name copy should not appear in
+the app. `50x Max` or similar is acceptable only as a leverage fact.
 
 ## Core Flow
 
 1. Connect wallet.
-2. Sign one AuthZ autosign grant if the wallet is not ready.
-3. Pick a market.
-4. Enter USDC amount.
-5. Review fixed direction and fixed leverage.
-6. Open max long.
-7. Track position and cash out through RFQ.
+2. Authorize RFQ autosign if needed.
+3. Stay on `The Lot`.
+4. Enter amount directly on a market card.
+5. Use `HALF` or `ALL-IN` when useful.
+6. Click `UPONLY >`.
+7. Show a transient `UPONLY OPENED!` stamp on that card.
+8. Track and cash out positions in `My Garage`.
 
-There is intentionally no short toggle, no leverage selector, no take-profit
-input, and no confirmation sheet.
+There is no direction toggle, leverage selector, order review panel,
+confirmation modal, take-profit input, or short flow.
 
-## Information Architecture
+## Navigation
 
-Top navigation:
+- `The Lot`: market cards with inline order controls.
+- `My Garage`: active UpOnly positions and cash-out actions.
+- Header actions: RFQ readiness badge, theme toggle, add cash, wallet menu.
+- Marquee: product-level urgency and one-line rules.
 
-- `Markets`: grid of tradable assets.
-- `Positions`: active app-managed long positions.
-- Wallet actions: add funds, revoke autosign, disconnect.
-- Theme toggle: light and dark.
+## Market Card Requirements
 
-Primary surfaces:
+Each card is both market display and order ticket:
 
-- Market grid
-- Max-long order panel
-- Positions list
-- AuthZ setup modal
-- Add funds bridge modal
-- Transaction status toast
+- Asset logo, symbol, and market name.
+- 24h move sticker.
+- Price and sparkline.
+- Fixed facts: `LONG ONLY`, market max leverage, liquidation estimate.
+- Amount input with a dollar prefix.
+- Balance label.
+- `HALF` and `ALL-IN` chips.
+- Position size preview.
+- Inline error stamp for insufficient balance or RFQ failure.
+- CTA that changes across connect, authorize, opening, disabled, and ready
+  states.
+- Success overlay: `UPONLY OPENED!` for roughly 2.4 seconds.
 
-## Screen Notes
+## Visual Rules
 
-### Markets
+- Cards may use up to 8px radius, but the design should read as hard-edged.
+- Use sticker shadows, not soft elevation.
+- Red is for sales energy and errors. Green is for action and long exposure.
+  Yellow is for signage. Cobalt is for system and wallet accents.
+- Keep layouts stable. Price updates, labels, and order states must not resize
+  buttons or shift the grid.
+- Avoid dark atmospheric crypto styling, glassmorphism, gradients as page
+  decoration, floating orbs, and generic SaaS cards.
+- Do not add instructional paragraphs inside the app. Controls should be
+  self-explanatory.
 
-Each market card should make the max-long action obvious without turning into
-a dense trading terminal. Required data:
+## Copy
 
-- Asset logo and symbol
-- Asset name
-- Current oracle or mark price
-- 24h change
-- Small sparkline
-- Derived max leverage label, for example `50x Max`
+Preferred:
 
-The CTA can say `50x Max`, `Max Long`, or a similar short phrase. Avoid any
-copy that implies choice of direction or leverage.
-
-### Order Panel
-
-This is the most important screen. It should show only the controls and risk
-facts needed for a max long:
-
-- Asset and current price
-- Sparkline
-- Direction: `Long only`
-- Leverage: derived market max
-- Amount input
-- Quick amount chips
-- Liquidation estimate
-- Insufficient balance warning
-- Authorization warning when needed
-- CTA: `Open Max Long`
-
-Do not introduce:
-
-- Direction toggles
-- Leverage sliders or segmented controls
-- Take-profit inputs
-- Stop-loss inputs
-- Confirmation modal
-
-### Positions
-
-Positions should emphasize live state and exit readiness:
-
-- Asset
-- Long badge
-- Stake amount
-- PnL and PnL percent
-- Entry price
-- Current price
-- Liquidation price
-- Optional progress indicator when a take-profit exists from external state
-- Cash out button
-
-Only long positions are shown as app-managed positions.
-
-### AuthZ Setup
-
-The AuthZ modal should stay direct and trust-building. Required ideas:
-
-- One-time authorization
-- Funds stay in the wallet
-- Revoke anytime
-- Wallet confirmation state
-
-Avoid heavy education. The app is for users who already trade perps.
-
-### Bridge Modal
-
-Keep the inherited CCTP bridge behavior. Designers may restyle it, but should
-not remove source-chain selection, allowance, burn, attestation, mint, recovery
-or status handling.
-
-## Interaction States
-
-Required states:
-
-- Wallet disconnected
-- Wallet connecting
-- Connected but AuthZ not ready
-- Authorizing
-- RFQ warmup active
-- Order submitted
-- RFQ matched
-- Open confirmed
-- Open failed
-- Position syncing after optimistic match
-- Cash out submitted
-- Cash out confirmed
-- Cash out failed
-- Bridge idle, approval, burn, attestation, mint, success, error
-
-The transaction toast should remain globally visible and should link to the
-explorer when a transaction hash exists.
-
-## Visual Direction
-
-Current scaffold direction:
-
-- Industrial trading console
-- White or near-black surfaces
-- Ink text
-- Signal green for action and upside
-- Cobalt for wallet and system state
-- Safety yellow for emphasis
-- Red only for loss, liquidation, and destructive revoke
-
-Suggested typography:
-
-- Keep a condensed, high-impact display face for headers and CTAs.
-- Use a readable grotesk for body copy.
-- Use a mono face for prices, hashes, amounts, and status details.
-
-Spacing should favor speed and scanability. Cards should be compact, not
-marketing-style. Keep controls stable so price updates and status changes do
-not shift layout.
-
-## Copy Guidelines
-
-Preferred language:
-
-- `Open Max Long`
-- `Long only`
+- `UpOnly`
+- `The Lot`
+- `My Garage`
+- `UPONLY >`
+- `UPONLY OPENED!`
+- `LONG ONLY`
 - `50x Max`
-- `Positions`
+- `Authorize RFQ`
+- `Add Cash`
 - `Cash Out`
-- `Authorize Wallet`
-- `Revoke autosign`
 
-Avoid language:
+Avoid:
 
 - `Bet`
-- `Down`
 - `Short`
-- `Aggressiveness`
+- `Down`
 - `Choose leverage`
 - `Target win`
-
-`YOLO` can remain an internal mode name in engineering, but it should not be
-primary product copy unless the final brand deliberately chooses it.
+- `Review order`
 
 ## Technical Constraints
 
-The implementation currently uses React, Vite, inline component styles, and
-CSS variables in `src/styles/global.css`. The app does not use Tailwind or a
-component library.
-
-Do not design flows that require:
-
-- Server custody of user keys
-- A backend trade executor
-- Per-trade wallet popups after AuthZ
-- Short entry
-- User-selected leverage
-- Required take-profit placement
-
-The `src/services/upOnly.js` module is the product guardrail for direction and
-leverage. Designs should assume those rules are fixed.
+- React and Vite frontend.
+- No Tailwind or component library.
+- Product guardrails live in `src/services/upOnly.js`.
+- RFQ prequote warmup should run from each valid market card.
+- The app must keep RFQ, AuthZ, autosign, and gas-free execution behavior.
+- Close orders still use the required opposite-side exchange order internally,
+  but the UI only presents app-managed long positions.
 
 ## Open Design Questions
 
-- Final product name: `Up Only`, `Max Long`, or another brand.
-- Production domain.
-- Whether the market grid should rank by volume, volatility, favorites, or a
-  curated list.
-- Whether to expose realized trade history in addition to open positions.
-- Whether to show an advanced risk drawer for liquidation math.
+- Final card density for mobile once real market count is high.
+- Whether to add favorites or volume sorting beyond the current hottest sort.
+- Whether `My Garage` should include realized history in a later version.
+- Whether advanced liquidation math belongs in an optional drawer.
