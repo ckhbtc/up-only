@@ -12,7 +12,7 @@ const STATUS_CONFIG = {
   opening: { label: 'MATCHED', bg: 'var(--accent-dim)', border: 'var(--accent)', color: 'var(--accent)' },
 };
 
-export default function ActiveBets({ bets, onCashOut, onCashOutAll, devMode }) {
+export default function ActiveBets({ bets, onCashOut, onCashOutAll, devMode, tradeBusy = false }) {
   const [now, setNow] = useState(() => Date.now());
   const hasOpenPnlGrace = bets.some(bet => Number(bet.pnlGraceExpiresAt || 0) > now);
 
@@ -38,15 +38,17 @@ export default function ActiveBets({ bets, onCashOut, onCashOutAll, devMode }) {
       {devMode && (
         <button
           onClick={onCashOutAll}
+          disabled={tradeBusy}
           style={{
             background: 'var(--red-dim)',
             border: '1px solid var(--red)',
             borderRadius: 8,
             padding: '12px 0',
             color: 'var(--red)',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            fontSize: 14, fontWeight: 700, cursor: tradeBusy ? 'wait' : 'pointer',
             fontFamily: 'var(--font-heading)',
             letterSpacing: 0.5,
+            opacity: tradeBusy ? 0.58 : 1,
           }}
         >Cash Out All ({bets.length})</button>
       )}
@@ -74,7 +76,12 @@ export default function ActiveBets({ bets, onCashOut, onCashOutAll, devMode }) {
         const liquidationDim = dangerClose ? 'var(--red-dim)' : 'var(--orange-dim)';
         const liq = derivePositionLiqPrice(bet);
         const priceDecimals = bet.market?.priceDecimals;
-        const cashOutDisabled = Boolean(bet.optimistic);
+        const cashOutDisabled = Boolean(bet.optimistic) || tradeBusy;
+        const cashOutLabel = bet.optimistic
+          ? 'Confirming...'
+          : tradeBusy
+            ? 'Order pending...'
+            : `Cash Out (${formatDollar(displayPnl)})`;
 
         return (
           <div key={bet.id} style={{
@@ -203,7 +210,7 @@ export default function ActiveBets({ bets, onCashOut, onCashOutAll, devMode }) {
                     fontFamily: 'var(--font-heading)',
                     opacity: cashOutDisabled ? 0.58 : 1,
                   }}
-                >{cashOutDisabled ? 'Confirming...' : `Cash Out (${formatDollar(displayPnl)})`}</button>
+                >{cashOutLabel}</button>
               </div>
             </div>
           </div>

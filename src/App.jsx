@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 
 const THEMES = ['bauhaus', 'bauhaus-dark'];
 const readInitialTheme = () => {
@@ -21,6 +21,7 @@ import {
   tradeOpenRfq,
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
+import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
 import useMarketStore from './stores/marketStore';
@@ -86,11 +87,17 @@ export default function App() {
   const [openedCards, setOpenedCards] = useState({});
   const [openingCards, setOpeningCards] = useState({});
   const [cardErrors, setCardErrors] = useState({});
+  const [tradeBusy, setTradeBusy] = useState(false);
+  const tradeLockRef = useRef(null);
   const [theme, setTheme] = useState(readInitialTheme);
   const [devMode, setDevMode] = useState(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem('up-only-dev-mode') === '1';
   });
+
+  if (!tradeLockRef.current) {
+    tradeLockRef.current = createTradeLock();
+  }
 
   // Sync theme to <html data-theme> + localStorage
   useEffect(() => {
@@ -136,6 +143,17 @@ export default function App() {
 
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
+  }, []);
+
+  const beginTrade = useCallback(() => {
+    if (!tradeLockRef.current.tryAcquire()) return false;
+    setTradeBusy(true);
+    return true;
+  }, []);
+
+  const endTrade = useCallback(() => {
+    tradeLockRef.current.release();
+    setTradeBusy(false);
   }, []);
 
   const needsAuthorization = connected && injAddress && !session.rfqReady;
@@ -260,10 +278,17 @@ export default function App() {
   }, []);
 
   const submitBet = useCallback(async (bet) => {
-    if (!bet || !connected) return;
+    if (!bet?.market || !connected) return;
+    if (!beginTrade()) return;
 
     const needsTakeProfitSignature = bet.targetPrice && Number(bet.targetPrice) > 0;
     const marketId = bet.market.marketId;
+    let tradeReleased = false;
+    const releaseTrade = () => {
+      if (tradeReleased) return;
+      tradeReleased = true;
+      endTrade();
+    };
 
     setOpeningCards(state => ({ ...state, [marketId]: true }));
     setCardErrors(state => {
@@ -313,6 +338,7 @@ export default function App() {
           : `${bet.market.symbol} UpOnly opened.`,
         txHash: result?.txHash,
       });
+      releaseTrade();
       refreshBalances();
       useMarketStore.getState().fetchPositions(useWalletStore.getState().injAddress);
     };
@@ -354,9 +380,10 @@ export default function App() {
       });
       markCardError(marketId, message);
       setTxStatus({ type: 'error', message });
+      releaseTrade();
       clearTxStatusSoon();
     }
-  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, markCardError]);
+  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, markCardError, beginTrade, endTrade]);
 
   const handleCardConfirm = useCallback((bet) => {
     void submitBet(bet);
@@ -364,12 +391,19 @@ export default function App() {
 
   const handleCashOut = useCallback(async (position) => {
     if (!connected || !position.market) return;
+    if (!beginTrade()) return;
 
     setTxStatus({ type: 'loading', message: 'Submitting cash-out order' });
 
     let closeConfirmed = false;
     let closeMatched = false;
     const optimisticCloseId = position.id;
+    let tradeReleased = false;
+    const releaseTrade = () => {
+      if (tradeReleased) return;
+      tradeReleased = true;
+      endTrade();
+    };
 
     const showOptimisticClose = () => {
       if (closeMatched) return;
@@ -389,6 +423,7 @@ export default function App() {
         message: 'Cash-out order confirmed',
         txHash: result?.txHash,
       });
+      releaseTrade();
       refreshBalances();
       useMarketStore.getState().fetchPositions(useWalletStore.getState().injAddress);
     };
@@ -422,9 +457,10 @@ export default function App() {
         useMarketStore.getState().removeOptimisticClosedPosition(optimisticCloseId, position);
       }
       setTxStatus({ type: 'error', message });
+      releaseTrade();
       clearTxStatusSoon();
     }
-  }, [connected, injAddress, refreshBalances, clearTxStatusSoon]);
+  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, beginTrade, endTrade]);
 
   // Sequential close - avoids nonce races on the same wallet. One failure
   // doesn't abort the rest; the final toast summarizes successes vs failures.
@@ -432,38 +468,44 @@ export default function App() {
     if (!connected) return;
     const list = useMarketStore.getState().positions.filter(p => p.market && isUpOnlyPosition(p));
     if (!list.length) return;
+    if (!beginTrade()) return;
     let ok = 0;
     let fail = 0;
-    for (let i = 0; i < list.length; i++) {
-      const pos = list[i];
-      setTxStatus({ type: 'loading', message: `Cash out ${i + 1}/${list.length}: ${pos.asset}...` });
-      try {
-        await tradeCloseRfq({
-          granterAddress: injAddress,
-          marketId: pos.marketId,
-          side: pos.side,
-          quantity: pos.quantity,
-          market: pos.market,
-          oraclePrice: pos.markPrice
-            || pos.currentPrice
-            || latestCachedPrice(pos.marketId, pos.market?.price),
-        });
-        ok += 1;
-      } catch (err) {
-        fail += 1;
-        console.error(`cash-out-all: ${pos.asset} failed`, err);
+    try {
+      for (let i = 0; i < list.length; i++) {
+        const pos = list[i];
+        setTxStatus({ type: 'loading', message: `Cash out ${i + 1}/${list.length}: ${pos.asset}...` });
+        try {
+          await tradeCloseRfq({
+            granterAddress: injAddress,
+            marketId: pos.marketId,
+            side: pos.side,
+            quantity: pos.quantity,
+            market: pos.market,
+            oraclePrice: pos.markPrice
+              || pos.currentPrice
+              || latestCachedPrice(pos.marketId, pos.market?.price),
+          });
+          ok += 1;
+        } catch (err) {
+          fail += 1;
+          console.error(`cash-out-all: ${pos.asset} failed`, err);
+        }
       }
+      setTxStatus({
+        type: fail === 0 ? 'success' : 'error',
+        message: fail === 0
+          ? `Closed ${ok} position${ok === 1 ? '' : 's'}`
+          : `Closed ${ok}, ${fail} failed`,
+      });
+      endTrade();
+      refreshBalances();
+      useMarketStore.getState().fetchPositions(useWalletStore.getState().injAddress);
+      clearTxStatusSoon();
+    } finally {
+      if (tradeLockRef.current.isLocked()) endTrade();
     }
-    setTxStatus({
-      type: fail === 0 ? 'success' : 'error',
-      message: fail === 0
-        ? `Closed ${ok} position${ok === 1 ? '' : 's'}`
-        : `Closed ${ok}, ${fail} failed`,
-    });
-    refreshBalances();
-    useMarketStore.getState().fetchPositions(useWalletStore.getState().injAddress);
-    clearTxStatusSoon();
-  }, [connected, injAddress, refreshBalances, clearTxStatusSoon]);
+  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, beginTrade, endTrade]);
 
   const handleRevokeAutosign = useCallback(async () => {
     if (!connected || !injAddress || session.revoking) return;
@@ -529,6 +571,7 @@ export default function App() {
                     authorizing={session.granting}
                     opened={Boolean(openedCards[market.marketId])}
                     opening={Boolean(openingCards[market.marketId])}
+                    tradeBusy={tradeBusy}
                     error={cardErrors[market.marketId]}
                     onConnect={connect}
                     onAuthorize={handleAuthorizeWallet}
@@ -560,6 +603,7 @@ export default function App() {
                   onCashOut={handleCashOut}
                   onCashOutAll={handleCashOutAll}
                   devMode={devMode}
+                  tradeBusy={tradeBusy}
                 />
               ) : (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: 14 }}>

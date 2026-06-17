@@ -38,6 +38,7 @@ export default function MarketCard({
   authorizing = false,
   opened = false,
   opening = false,
+  tradeBusy = false,
   error = '',
   onConnect,
   onAuthorize,
@@ -64,6 +65,7 @@ export default function MarketCard({
   const canSubmit = connected
     && rfqReady
     && !opening
+    && !tradeBusy
     && !emptyStake
     && !insufficient
     && maxConfig.allowed;
@@ -72,6 +74,7 @@ export default function MarketCard({
     if (!connected) return connecting ? 'CONNECTING...' : 'CONNECT WALLET';
     if (!rfqReady) return authorizing ? 'AUTHORIZING...' : 'AUTHORIZE RFQ';
     if (opening) return 'OPENING...';
+    if (tradeBusy) return 'ORDER PENDING...';
     if (!maxConfig.allowed) return 'MAX UNAVAILABLE';
     if (emptyStake) return 'ENTER CASH';
     if (insufficient) return 'NEED CASH';
