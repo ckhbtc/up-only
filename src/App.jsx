@@ -628,14 +628,6 @@ export default function App() {
 
           {view === 'bets' && (
             <>
-              <div className="up-lot-head">
-                <div>
-                  <h1 className="up-lot-title">MY GARAGE</h1>
-                  <p className="up-lot-copy">
-                    Active UpOnly positions, cash-out lanes, and liquidation markers.
-                  </p>
-                </div>
-              </div>
               {connected ? (
                 <ActiveBets
                   bets={visiblePositions}
