@@ -507,22 +507,6 @@ export default function App() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {view === 'home' && (
             <>
-              <div className="up-lot-head">
-                <div>
-                  <h1 className="up-lot-title">TODAY'S HOT INVENTORY!</h1>
-                  <p className="up-lot-copy">
-                    {loading
-                      ? 'Loading the lot...'
-                      : connected
-                        ? <>Type your cash, smack <span>UPONLY</span>, no haggling, no confirmation. Up only.</>
-                        : 'Connect wallet to start shopping the up-only lot.'}
-                  </p>
-                </div>
-                <div className="up-sort-pill">
-                  <span>Sorted by</span>
-                  <strong>Hottest!</strong>
-                </div>
-              </div>
               {connected && session.active && !session.rfqReady && (
                 <div className="up-inline-auth">
                   <span>RFQ autosign needs a fresh authorization before orders can leave the lot.</span>
