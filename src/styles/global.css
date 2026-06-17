@@ -6,28 +6,28 @@
 
 :root,
 [data-theme="bauhaus"] {
-  --bg-primary: #fff7cf;
+  --bg-primary: #f3ffd7;
   --bg-secondary: #ffe24b;
   --bg-card: #ffffff;
-  --bg-card-hover: #fff3ad;
+  --bg-card-hover: #ebffc2;
   --border: #101014;
   --border-light: #101014;
   --text-primary: #101014;
   --text-secondary: #2f2c20;
   --text-muted: #6f6442;
-  --accent: #12a963;
-  --accent-light: #d9ff38;
-  --accent-dim: rgba(18, 169, 99, 0.16);
-  --accent-grad: linear-gradient(135deg, #d9ff38 0%, #12a963 100%);
+  --accent: #00b866;
+  --accent-light: #b8ff2c;
+  --accent-dim: rgba(0, 184, 102, 0.18);
+  --accent-grad: linear-gradient(135deg, #d9ff38 0%, #00b866 100%);
   --on-accent: #101014;
-  --green: #0c8e52;
-  --green-dim: rgba(12, 142, 82, 0.14);
+  --green: #008f4f;
+  --green-dim: rgba(0, 143, 79, 0.16);
   --orange: #ff8a00;
   --orange-dim: rgba(255, 138, 0, 0.16);
   --red: #e3261e;
   --red-dim: rgba(227, 38, 30, 0.14);
   --blue: #184fe8;
-  --blue-grad: linear-gradient(135deg, #184fe8 0%, #12a963 100%);
+  --blue-grad: linear-gradient(135deg, #184fe8 0%, #00b866 100%);
   --yellow: #ffe24b;
   --paper: #fffdf0;
   --overlay: rgba(16, 16, 20, 0.62);
@@ -35,13 +35,13 @@
   --font-body: "Trebuchet MS", Arial, sans-serif;
   --font-mono: "Courier New", Courier, monospace;
   --stamp-bg: #101014;
-  --stamp-fg: #d9ff38;
+  --stamp-fg: #b8ff2c;
   --focus-ring: #184fe8;
 }
 
 [data-theme="bauhaus-dark"] {
-  --bg-primary: #130d0b;
-  --bg-secondary: #241411;
+  --bg-primary: #0f160e;
+  --bg-secondary: #172414;
   --bg-card: #fff6d7;
   --bg-card-hover: #ffe98d;
   --border: #090807;
@@ -49,19 +49,19 @@
   --text-primary: #130d0b;
   --text-secondary: #392519;
   --text-muted: #755a31;
-  --accent: #17c978;
-  --accent-light: #d9ff38;
-  --accent-dim: rgba(23, 201, 120, 0.18);
-  --accent-grad: linear-gradient(135deg, #d9ff38 0%, #17c978 100%);
+  --accent: #18d979;
+  --accent-light: #b8ff2c;
+  --accent-dim: rgba(24, 217, 121, 0.2);
+  --accent-grad: linear-gradient(135deg, #b8ff2c 0%, #18d979 100%);
   --on-accent: #090807;
-  --green: #10a961;
-  --green-dim: rgba(16, 169, 97, 0.18);
+  --green: #12bf6c;
+  --green-dim: rgba(18, 191, 108, 0.2);
   --orange: #ff9e18;
   --orange-dim: rgba(255, 158, 24, 0.18);
   --red: #f0322a;
   --red-dim: rgba(240, 50, 42, 0.16);
   --blue: #2e5dff;
-  --blue-grad: linear-gradient(135deg, #2e5dff 0%, #17c978 100%);
+  --blue-grad: linear-gradient(135deg, #2e5dff 0%, #18d979 100%);
   --yellow: #ffe24b;
   --paper: #fff6d7;
   --overlay: rgba(5, 4, 4, 0.74);
@@ -83,14 +83,14 @@ body {
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0;
   background-image:
-    linear-gradient(90deg, rgba(255, 226, 75, 0.55) 0 16px, transparent 16px 32px),
+    linear-gradient(90deg, rgba(184, 255, 44, 0.5) 0 16px, transparent 16px 32px),
     repeating-linear-gradient(0deg, transparent 0 34px, rgba(16, 16, 20, 0.06) 34px 36px);
   background-attachment: fixed;
 }
 
 [data-theme="bauhaus-dark"] body {
   background-image:
-    linear-gradient(90deg, rgba(227, 38, 30, 0.22) 0 16px, transparent 16px 32px),
+    linear-gradient(90deg, rgba(24, 217, 121, 0.22) 0 16px, transparent 16px 32px),
     repeating-linear-gradient(0deg, transparent 0 34px, rgba(255, 226, 75, 0.08) 34px 36px);
 }
 
@@ -133,7 +133,7 @@ h4 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--red);
+  background: var(--green);
   border: 2px solid var(--border);
 }
 
@@ -257,7 +257,7 @@ input:focus-visible {
 }
 
 .up-brand {
-  color: var(--red);
+  color: var(--green);
   font-family: var(--font-heading);
   font-size: 31px;
   font-weight: 900;
@@ -303,7 +303,7 @@ input:focus-visible {
 }
 
 .up-tab.is-active {
-  background: var(--blue);
+  background: var(--green);
   color: #fff;
   text-shadow: 2px 2px 0 var(--border);
 }
@@ -480,7 +480,7 @@ input:focus-visible {
 }
 
 .theme-toggle .seg.on {
-  background: var(--blue);
+  background: var(--green);
   color: #fff;
 }
 
@@ -673,7 +673,7 @@ input:focus-visible {
 }
 
 .up-hot-ribbon {
-  background: var(--red);
+  background: var(--green);
   border-bottom: 4px solid var(--border);
   color: #fff;
   font-family: var(--font-heading);
@@ -1018,10 +1018,10 @@ input:focus-visible {
 .up-stamp {
   animation: up-stamp-pop 0.28s ease-out;
   background: var(--accent-light);
-  border: 6px solid var(--red);
+  border: 6px solid var(--green);
   border-radius: 8px;
   box-shadow: 8px 8px 0 var(--border);
-  color: var(--red);
+  color: var(--green);
   font-family: var(--font-heading);
   font-size: 44px;
   line-height: 0.95;
