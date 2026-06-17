@@ -44,7 +44,7 @@ export default function MarketCard({
   onAuthorize,
   onConfirm,
 }) {
-  const [stake, setStake] = useState('100');
+  const [stake, setStake] = useState('');
   const price = Number(market.price) || 0;
   const priceDecimals = market.priceDecimals;
   const isUp = Number(market.change24h || 0) >= 0;
