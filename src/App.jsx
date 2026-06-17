@@ -21,6 +21,7 @@ import {
   tradeOpenRfq,
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
+import { filterMarketsBySearch } from './services/marketSearch';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
@@ -89,6 +90,8 @@ export default function App() {
   const [cardErrors, setCardErrors] = useState({});
   const [tradeBusy, setTradeBusy] = useState(false);
   const tradeLockRef = useRef(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState(readInitialTheme);
   const [devMode, setDevMode] = useState(() => {
     if (typeof localStorage === 'undefined') return false;
@@ -140,6 +143,9 @@ export default function App() {
   const sortedMarkets = useMemo(() => (
     [...markets].sort((a, b) => Math.abs(b.change24h || 0) - Math.abs(a.change24h || 0))
   ), [markets]);
+  const visibleMarkets = useMemo(() => (
+    filterMarketsBySearch(sortedMarkets, searchQuery)
+  ), [sortedMarkets, searchQuery]);
 
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
@@ -155,6 +161,29 @@ export default function App() {
     tradeLockRef.current.release();
     setTradeBusy(false);
   }, []);
+
+  const openSearch = useCallback(() => {
+    setView('home');
+    setSearchOpen(true);
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchQuery('');
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      const tag = event.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable) return;
+      event.preventDefault();
+      openSearch();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [openSearch]);
 
   const needsAuthorization = connected && injAddress && !session.rfqReady;
 
@@ -534,6 +563,11 @@ export default function App() {
         currentView={view}
         theme={theme}
         onSetTheme={setThemeTo}
+        searchOpen={searchOpen}
+        searchQuery={searchQuery}
+        onOpenSearch={openSearch}
+        onCloseSearch={closeSearch}
+        onSearchQueryChange={setSearchQuery}
         onAddFunds={() => setShowBridge(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
@@ -559,7 +593,7 @@ export default function App() {
                 </div>
               )}
               <div className="up-market-grid">
-                {sortedMarkets.map(market => (
+                {visibleMarkets.map(market => (
                   <MarketCard
                     key={market.id}
                     market={market}
@@ -582,6 +616,11 @@ export default function App() {
               {markets.length === 0 && !loading && (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
                   {connected ? 'No markets available' : 'Connect your wallet to see live markets'}
+                </div>
+              )}
+              {markets.length > 0 && visibleMarkets.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                  No pairs match that search.
                 </div>
               )}
             </>

@@ -281,12 +281,16 @@ input:focus-visible {
 }
 
 .up-tab {
+  align-items: center;
   background: transparent;
   border: 0;
   border-radius: 5px;
   color: var(--text-primary);
+  display: inline-flex;
   font-family: var(--font-heading);
   font-size: 17px;
+  gap: 7px;
+  justify-content: center;
   min-height: 36px;
   padding: 7px 14px;
   text-transform: uppercase;
@@ -297,6 +301,73 @@ input:focus-visible {
   background: var(--blue);
   color: #fff;
   text-shadow: 2px 2px 0 var(--border);
+}
+
+.up-search-icon {
+  fill: none;
+  flex: 0 0 auto;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+  width: 15px;
+}
+
+.up-nav-search {
+  align-items: center;
+  background: var(--paper);
+  border: 3px solid var(--border);
+  border-radius: 5px;
+  display: inline-flex;
+  gap: 7px;
+  min-height: 36px;
+  padding: 4px 6px;
+  width: min(260px, 32vw);
+}
+
+.up-nav-search input {
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 0;
+  outline: 0;
+  width: 100%;
+}
+
+.up-nav-search:focus-within {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.up-nav-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.up-nav-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.up-search-clear {
+  align-items: center;
+  background: var(--red);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  height: 21px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  text-transform: uppercase;
+  width: 21px;
 }
 
 .up-head-actions {
@@ -659,18 +730,6 @@ input:focus-visible {
   color: var(--text-primary);
   font-size: 32px;
   line-height: 0.95;
-}
-
-.up-token p {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .up-heat {
@@ -1284,12 +1343,18 @@ input:focus-visible {
   }
 
   .up-tabs {
+    flex-wrap: wrap;
     width: 100%;
   }
 
   .up-tab {
     flex: 1;
     font-size: 15px;
+  }
+
+  .up-nav-search {
+    flex: 1 0 100%;
+    width: 100%;
   }
 
   .up-head-actions {

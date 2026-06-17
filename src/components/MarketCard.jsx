@@ -166,7 +166,6 @@ export default function MarketCard({
           <CoinLogo symbol={market.symbol} logoUrl={market.logo} size={42} />
           <div>
             <h2>{market.symbol}</h2>
-            <p>{market.name}</p>
           </div>
         </div>
         <div className={`up-heat ${isUp ? 'is-up' : 'is-down'}`}>

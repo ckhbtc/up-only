@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import useWalletStore from '../stores/walletStore';
 import { formatUsdcBalance } from '../data/mockData';
 
@@ -23,11 +24,25 @@ function ThemeIcon({ icon }) {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg className="up-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.2 15.2 5.3 5.3" />
+    </svg>
+  );
+}
+
 export default function TopBar({
   onNavigate,
   currentView,
   theme,
   onSetTheme,
+  searchOpen,
+  searchQuery,
+  onOpenSearch,
+  onCloseSearch,
+  onSearchQueryChange,
   onAddFunds,
   onRevokeAutosign,
   sessionActive,
@@ -35,6 +50,21 @@ export default function TopBar({
   devMode,
 }) {
   const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect } = useWalletStore();
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  }, [searchOpen]);
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCloseSearch();
+    }
+  };
 
   return (
     <header className="up-shell-head">
@@ -59,6 +89,39 @@ export default function TopBar({
               {item.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className={`up-tab up-search-tab ${searchOpen ? 'is-active' : ''}`}
+            aria-label="Search pairs"
+            aria-keyshortcuts="/"
+            title="Search pairs"
+          >
+            <SearchIcon />
+            <span>Search</span>
+          </button>
+          {searchOpen && (
+            <div className="up-nav-search">
+              <SearchIcon />
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={searchQuery}
+                onChange={event => onSearchQueryChange(event.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Search pairs"
+                aria-label="Search pairs"
+              />
+              <button
+                type="button"
+                className="up-search-clear"
+                onClick={searchQuery ? () => onSearchQueryChange('') : onCloseSearch}
+                aria-label={searchQuery ? 'Clear search' : 'Close search'}
+              >
+                x
+              </button>
+            </div>
+          )}
         </nav>
 
         <div className="up-head-actions">
