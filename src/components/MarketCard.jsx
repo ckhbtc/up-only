@@ -29,6 +29,7 @@ function formatAmountInput(value) {
 }
 
 export default function MarketCard({
+  cardRef = null,
   market,
   balance,
   requestAddress,
@@ -38,6 +39,7 @@ export default function MarketCard({
   authorizing = false,
   opened = false,
   opening = false,
+  searchHighlighted = false,
   tradeBusy = false,
   error = '',
   onConnect,
@@ -158,7 +160,10 @@ export default function MarketCard({
   ]);
 
   return (
-    <article className="up-card">
+    <article
+      ref={cardRef}
+      className={`up-card ${searchHighlighted ? 'is-search-match' : ''}`}
+    >
       <div className="up-hot-ribbon">NO SHORTS - NO SLIDERS - MAX ONLY</div>
 
       <div className="up-card-top">

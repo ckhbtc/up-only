@@ -21,7 +21,7 @@ import {
   tradeOpenRfq,
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
-import { filterMarketsBySearch } from './services/marketSearch';
+import { marketsMatchingSearch } from './services/marketSearch';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
@@ -90,6 +90,7 @@ export default function App() {
   const [cardErrors, setCardErrors] = useState({});
   const [tradeBusy, setTradeBusy] = useState(false);
   const tradeLockRef = useRef(null);
+  const marketCardRefs = useRef(new Map());
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState(readInitialTheme);
@@ -143,9 +144,15 @@ export default function App() {
   const sortedMarkets = useMemo(() => (
     [...markets].sort((a, b) => Math.abs(b.change24h || 0) - Math.abs(a.change24h || 0))
   ), [markets]);
-  const visibleMarkets = useMemo(() => (
-    filterMarketsBySearch(sortedMarkets, searchQuery)
+  const searchMatches = useMemo(() => (
+    marketsMatchingSearch(sortedMarkets, searchQuery)
   ), [sortedMarkets, searchQuery]);
+  const searchMatchedMarketIds = useMemo(() => new Set(
+    searchMatches.map(market => market.marketId ?? market.id)
+  ), [searchMatches]);
+  const firstSearchMatchId = searchMatches.length
+    ? (searchMatches[0].marketId ?? searchMatches[0].id)
+    : null;
 
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
@@ -172,6 +179,15 @@ export default function App() {
     setSearchQuery('');
   }, []);
 
+  const setMarketCardRef = useCallback((marketId, node) => {
+    if (marketId == null) return;
+    if (node) {
+      marketCardRefs.current.set(marketId, node);
+    } else {
+      marketCardRefs.current.delete(marketId);
+    }
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -184,6 +200,20 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [openSearch]);
+
+  useEffect(() => {
+    if (view !== 'home' || !searchQuery.trim() || firstSearchMatchId == null) return undefined;
+
+    const timer = window.setTimeout(() => {
+      marketCardRefs.current.get(firstSearchMatchId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [view, searchQuery, firstSearchMatchId]);
 
   const needsAuthorization = connected && injAddress && !session.rfqReady;
 
@@ -593,34 +623,34 @@ export default function App() {
                 </div>
               )}
               <div className="up-market-grid">
-                {visibleMarkets.map(market => (
-                  <MarketCard
-                    key={market.id}
-                    market={market}
-                    balance={usdcBalance}
-                    requestAddress={injAddress}
-                    connected={connected}
-                    connecting={connecting}
-                    rfqReady={session.rfqReady}
-                    authorizing={session.granting}
-                    opened={Boolean(openedCards[market.marketId])}
-                    opening={Boolean(openingCards[market.marketId])}
-                    tradeBusy={tradeBusy}
-                    error={cardErrors[market.marketId]}
-                    onConnect={connect}
-                    onAuthorize={handleAuthorizeWallet}
-                    onConfirm={handleCardConfirm}
-                  />
-                ))}
+                {sortedMarkets.map(market => {
+                  const marketRefId = market.marketId ?? market.id;
+                  return (
+                    <MarketCard
+                      key={market.id}
+                      cardRef={node => setMarketCardRef(marketRefId, node)}
+                      market={market}
+                      balance={usdcBalance}
+                      requestAddress={injAddress}
+                      connected={connected}
+                      connecting={connecting}
+                      rfqReady={session.rfqReady}
+                      authorizing={session.granting}
+                      opened={Boolean(openedCards[market.marketId])}
+                      opening={Boolean(openingCards[market.marketId])}
+                      searchHighlighted={searchMatchedMarketIds.has(marketRefId)}
+                      tradeBusy={tradeBusy}
+                      error={cardErrors[market.marketId]}
+                      onConnect={connect}
+                      onAuthorize={handleAuthorizeWallet}
+                      onConfirm={handleCardConfirm}
+                    />
+                  );
+                })}
               </div>
               {markets.length === 0 && !loading && (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
                   {connected ? 'No markets available' : 'Connect your wallet to see live markets'}
-                </div>
-              )}
-              {markets.length > 0 && visibleMarkets.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-                  No pairs match that search.
                 </div>
               )}
             </>

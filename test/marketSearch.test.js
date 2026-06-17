@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { filterMarketsBySearch, marketMatchesSearch } from '../src/services/marketSearch.js';
+import { marketMatchesSearch, marketsMatchingSearch } from '../src/services/marketSearch.js';
 
 const markets = [
   {
@@ -26,10 +26,10 @@ test('marketMatchesSearch matches symbols, names, token names, and slugs', () =>
   assert.equal(marketMatchesSearch(markets[1], 'btc'), false);
 });
 
-test('filterMarketsBySearch preserves all markets for a blank query', () => {
-  assert.equal(filterMarketsBySearch(markets, ''), markets);
+test('marketsMatchingSearch returns no highlighted matches for a blank query', () => {
+  assert.deepEqual(marketsMatchingSearch(markets, ''), []);
 });
 
-test('filterMarketsBySearch filters by the normalized query', () => {
-  assert.deepEqual(filterMarketsBySearch(markets, ' INJECT '), [markets[1]]);
+test('marketsMatchingSearch finds matches by the normalized query without changing order', () => {
+  assert.deepEqual(marketsMatchingSearch(markets, ' INJECT '), [markets[1]]);
 });

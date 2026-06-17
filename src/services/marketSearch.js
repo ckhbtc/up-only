@@ -15,8 +15,8 @@ export function marketMatchesSearch(market, query) {
   ].some(value => normalizeSearch(value).includes(needle));
 }
 
-export function filterMarketsBySearch(markets, query) {
+export function marketsMatchingSearch(markets, query) {
   const needle = normalizeSearch(query);
-  if (!needle) return markets;
+  if (!needle) return [];
   return markets.filter(market => marketMatchesSearch(market, needle));
 }

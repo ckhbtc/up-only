@@ -204,6 +204,11 @@ input[type="number"] {
   100% { opacity: 1; transform: scale(1) rotate(-9deg); }
 }
 
+@keyframes up-search-ring {
+  0%, 100% { outline-color: var(--accent-light); }
+  50% { outline-color: var(--blue); }
+}
+
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid var(--focus-ring);
@@ -632,7 +637,7 @@ input:focus-visible {
   align-items: stretch;
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
 .up-card {
@@ -648,6 +653,7 @@ input:focus-visible {
   overflow: hidden;
   padding: 0 14px 14px;
   position: relative;
+  scroll-margin-top: 120px;
 }
 
 .up-card:nth-child(3n + 2) {
@@ -656,6 +662,14 @@ input:focus-visible {
 
 .up-card:nth-child(3n) {
   box-shadow: 8px 8px 0 var(--blue);
+}
+
+.up-card.is-search-match {
+  animation: slide-up 0.22s ease, up-search-ring 1s ease-in-out 3;
+  box-shadow: 8px 8px 0 var(--blue), 0 0 0 5px var(--accent-light);
+  outline: 5px solid var(--accent-light);
+  outline-offset: 4px;
+  z-index: 2;
 }
 
 .up-hot-ribbon {
