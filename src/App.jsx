@@ -8,7 +8,6 @@ const readInitialTheme = () => {
 };
 import TopBar from './components/TopBar';
 import MarketCard from './components/MarketCard';
-import BetPanel from './components/BetPanel';
 import ActiveBets from './components/ActiveBets';
 import AuthZSetup from './components/AuthZSetup';
 import BridgeModal from './components/BridgeModal';
@@ -79,12 +78,14 @@ function buildOptimisticOpenPosition(bet) {
 
 export default function App() {
   const [view, setView] = useState('home');
-  const [selectedMarket, setSelectedMarket] = useState(null);
   const [txStatus, setTxStatus] = useState(null); // { type: 'loading'|'success'|'warning'|'error', message, txHash? }
   const [confetti, setConfetti] = useState(false);
   const [showBridge, setShowBridge] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authDismissedFor, setAuthDismissedFor] = useState(null);
+  const [openedCards, setOpenedCards] = useState({});
+  const [openingCards, setOpeningCards] = useState({});
+  const [cardErrors, setCardErrors] = useState({});
   const [theme, setTheme] = useState(readInitialTheme);
   const [devMode, setDevMode] = useState(() => {
     if (typeof localStorage === 'undefined') return false;
@@ -125,10 +126,13 @@ export default function App() {
     return () => { window.removeEventListener('keydown', onKey); clearTimeout(timer); };
   }, []);
 
-  const { connected, injAddress, ethAddress, usdcBalance, refreshBalances } = useWalletStore();
+  const { connected, connecting, injAddress, ethAddress, usdcBalance, connect, refreshBalances } = useWalletStore();
   const { markets, positions, loading, startPolling, stopPolling } = useMarketStore();
   const session = useSessionStore();
   const visiblePositions = useMemo(() => positions.filter(isUpOnlyPosition), [positions]);
+  const sortedMarkets = useMemo(() => (
+    [...markets].sort((a, b) => Math.abs(b.change24h || 0) - Math.abs(a.change24h || 0))
+  ), [markets]);
 
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
@@ -166,9 +170,9 @@ export default function App() {
       return;
     }
 
-    if (view !== 'home' || selectedMarket || authDismissedFor === injAddress) return;
+    if (view !== 'home' || authDismissedFor === injAddress) return;
     setShowAuthModal(true);
-  }, [connected, injAddress, needsAuthorization, view, selectedMarket, authDismissedFor]);
+  }, [connected, injAddress, needsAuthorization, view, authDismissedFor]);
 
   // Re-validate the session token against the currently-connected wallet.
   // Prevents a stale sessionToken (bound to a prior granter) from being
@@ -233,19 +237,43 @@ export default function App() {
     }
   }, [connected, injAddress, startPolling, stopPolling]);
 
+  const markCardOpened = useCallback((marketId) => {
+    setOpenedCards(state => ({ ...state, [marketId]: true }));
+    window.setTimeout(() => {
+      setOpenedCards(state => {
+        const next = { ...state };
+        delete next[marketId];
+        return next;
+      });
+    }, 2400);
+  }, []);
 
-  const handlePlaceBet = useCallback((market) => {
-    setSelectedMarket(market);
+  const markCardError = useCallback((marketId, message) => {
+    setCardErrors(state => ({ ...state, [marketId]: message }));
+    window.setTimeout(() => {
+      setCardErrors(state => {
+        const next = { ...state };
+        delete next[marketId];
+        return next;
+      });
+    }, 5200);
   }, []);
 
   const submitBet = useCallback(async (bet) => {
     if (!bet || !connected) return;
 
     const needsTakeProfitSignature = bet.targetPrice && Number(bet.targetPrice) > 0;
+    const marketId = bet.market.marketId;
 
+    setOpeningCards(state => ({ ...state, [marketId]: true }));
+    setCardErrors(state => {
+      const next = { ...state };
+      delete next[marketId];
+      return next;
+    });
     setTxStatus({
       type: 'loading',
-      message: 'Order submitted',
+      message: `UpOnly order submitted for ${bet.market.symbol}`,
     });
 
     let openConfirmed = false;
@@ -259,10 +287,7 @@ export default function App() {
       optimisticPositionId = optimisticPosition.id;
       useMarketStore.getState().addOptimisticPosition(optimisticPosition);
       setTxStatus(null);
-      setSelectedMarket(null);
-      setView('bets');
-      setConfetti(true);
-      setTimeout(() => setConfetti(false), 3500);
+      markCardOpened(marketId);
     };
 
     const settleOpenConfirmed = (result) => {
@@ -276,11 +301,16 @@ export default function App() {
           pnlGraceExpiresAt: nextOpenPnlGraceExpiresAt(),
         });
       }
+      setOpeningCards(state => {
+        const next = { ...state };
+        delete next[marketId];
+        return next;
+      });
       setTxStatus({
         type: needsTakeProfitSignature ? 'info' : 'success',
         message: needsTakeProfitSignature
           ? 'next, confirm the take profit order through your connected wallet'
-          : 'Order confirmed.',
+          : `${bet.market.symbol} UpOnly opened.`,
         txHash: result?.txHash,
       });
       refreshBalances();
@@ -316,12 +346,18 @@ export default function App() {
       if (optimisticPositionId) {
         useMarketStore.getState().removeOptimisticPosition(optimisticPositionId);
       }
+      setOpeningCards(state => {
+        const next = { ...state };
+        delete next[marketId];
+        return next;
+      });
+      markCardError(marketId, err.message);
       setTxStatus({ type: 'error', message: err.message });
       clearTxStatusSoon();
     }
-  }, [connected, injAddress, refreshBalances, clearTxStatusSoon]);
+  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, markCardError]);
 
-  const handleBetConfirm = useCallback((bet) => {
+  const handleCardConfirm = useCallback((bet) => {
     void submitBet(bet);
   }, [submitBet]);
 
@@ -457,6 +493,7 @@ export default function App() {
         onAddFunds={() => setShowBridge(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
+        rfqReady={session.rfqReady}
         revokingAutosign={session.revoking}
         devMode={devMode}
       />
@@ -465,32 +502,53 @@ export default function App() {
       {confetti && <Confetti />}
       <TransactionStatus status={txStatus} />
 
-      <div style={{
-        flex: 1, display: 'flex', maxWidth: 1200,
-        margin: '0 auto', width: '100%', padding: '24px 24px', gap: 18,
-      }}>
+      <div className="up-page">
         {/* Main content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {view === 'home' && !selectedMarket && (
+          {view === 'home' && (
             <>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1, marginBottom: 6 }}>Markets</h1>
-                <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                  {loading ? 'Loading markets...' : connected ? 'Pick an asset to open a max long' : 'Connect wallet to start trading'}
-                </p>
-                {connected && session.active && !session.rfqReady && (
-                  <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 8 }}>
-                    Re-authorize autosign to open positions.
-                  </div>
-                )}
+              <div className="up-lot-head">
+                <div>
+                  <h1 className="up-lot-title">TODAY'S HOT INVENTORY!</h1>
+                  <p className="up-lot-copy">
+                    {loading
+                      ? 'Loading the lot...'
+                      : connected
+                        ? <>Type your cash, smack <span>UPONLY</span>, no haggling, no confirmation. Long only up.</>
+                        : 'Connect wallet to start shopping the long-only lot.'}
+                  </p>
+                </div>
+                <div className="up-sort-pill">
+                  <span>Sorted by</span>
+                  <strong>Hottest!</strong>
+                </div>
               </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
-                gap: 12,
-              }}>
-                {markets.map(market => (
-                  <MarketCard key={market.id} market={market} onPlaceBet={handlePlaceBet} />
+              {connected && session.active && !session.rfqReady && (
+                <div className="up-inline-auth">
+                  <span>RFQ autosign needs a fresh authorization before orders can leave the lot.</span>
+                  <button type="button" onClick={handleAuthorizeWallet} disabled={session.granting}>
+                    {session.granting ? 'Authorizing...' : 'Authorize Wallet'}
+                  </button>
+                </div>
+              )}
+              <div className="up-market-grid">
+                {sortedMarkets.map(market => (
+                  <MarketCard
+                    key={market.id}
+                    market={market}
+                    balance={usdcBalance}
+                    requestAddress={injAddress}
+                    connected={connected}
+                    connecting={connecting}
+                    rfqReady={session.rfqReady}
+                    authorizing={session.granting}
+                    opened={Boolean(openedCards[market.marketId])}
+                    opening={Boolean(openingCards[market.marketId])}
+                    error={cardErrors[market.marketId]}
+                    onConnect={connect}
+                    onAuthorize={handleAuthorizeWallet}
+                    onConfirm={handleCardConfirm}
+                  />
                 ))}
               </div>
               {markets.length === 0 && !loading && (
@@ -501,48 +559,15 @@ export default function App() {
             </>
           )}
 
-          {view === 'home' && selectedMarket && (
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 20 }}>
-              {!connected ? (
-                <div style={{
-                  textAlign: 'center', padding: '40px 20px',
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
-                  borderRadius: 16, maxWidth: 400, width: '100%',
-                }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🔗</div>
-                  <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Connect Wallet</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-                    Connect MetaMask or Rabby to open {selectedMarket.symbol}
-                  </div>
-                  <button
-                    onClick={() => useWalletStore.getState().connect()}
-                    style={{
-                      background: 'var(--accent-grad)',
-                      border: 'none', borderRadius: 10, padding: '14px 28px',
-                      color: 'var(--on-accent)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'var(--font-heading)',
-                    }}
-                  >Connect Wallet</button>
-                </div>
-              ) : (
-                <BetPanel
-                  market={selectedMarket}
-                  balance={usdcBalance}
-                  requestAddress={injAddress}
-                  rfqReady={session.rfqReady}
-                  authorizing={session.granting}
-                  onAuthorize={handleAuthorizeWallet}
-                  onConfirm={handleBetConfirm}
-                  onClose={() => setSelectedMarket(null)}
-                />
-              )}
-            </div>
-          )}
-
           {view === 'bets' && (
             <>
-              <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1, marginBottom: 6 }}>Positions</h1>
+              <div className="up-lot-head">
+                <div>
+                  <h1 className="up-lot-title">MY GARAGE</h1>
+                  <p className="up-lot-copy">
+                    Active UpOnly positions, cash-out lanes, and liquidation markers.
+                  </p>
+                </div>
               </div>
               {connected ? (
                 <ActiveBets

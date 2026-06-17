@@ -23,4 +23,4 @@ app.get(/^(?!\/api\/).*/, (req, res) => {
 });
 
 const PORT = parseInt(process.env.PORT || '36000', 10);
-app.listen(PORT, () => console.log(`Up Only running on port ${PORT}`));
+app.listen(PORT, () => console.log(`UpOnly running on port ${PORT}`));

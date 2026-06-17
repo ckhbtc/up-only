@@ -2,8 +2,17 @@ import useWalletStore from '../stores/walletStore';
 import { formatUsdcBalance } from '../data/mockData';
 
 const THEME_SEGS = [
-  { id: 'bauhaus',      glyph: 'L', label: 'Light' },
+  { id: 'bauhaus', glyph: 'L', label: 'Light' },
   { id: 'bauhaus-dark', glyph: 'D', label: 'Dark' },
+];
+
+const MARQUEE = [
+  'UPONLY BLOWOUT',
+  'EVERY POSITION LONG',
+  'ZERO CONFIRMATION',
+  'TYPE YOUR CASH AND CLICK',
+  'GAS-FREE AFTER SETUP',
+  'NOTHING BUT UPONLY',
 ];
 
 export default function TopBar({
@@ -14,174 +23,117 @@ export default function TopBar({
   onAddFunds,
   onRevokeAutosign,
   sessionActive,
+  rfqReady,
   revokingAutosign,
   devMode,
 }) {
-  const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect, error } = useWalletStore();
+  const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect } = useWalletStore();
+  const rfqLabel = connected ? (rfqReady ? 'RFQ OPEN!' : 'AUTH NEEDED') : 'CONNECT FIRST';
 
   return (
-    <header style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      height: 56,
-      borderBottom: '1px solid var(--border)',
-      background: 'var(--bg-secondary)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => onNavigate('home')}>
-          <img
-            src="/iso.png"
-            alt="Up Only"
-            width={28}
-            height={28}
-            style={{ width: 28, height: 28, display: 'block', borderRadius: '50%' }}
-          />
-          <span style={{
-            fontSize: 16, fontWeight: 700, letterSpacing: -0.5,
-            fontFamily: 'var(--font-heading)',
-          }}>UP ONLY</span>
+    <header className="up-shell-head">
+      <div className="up-marquee-wrap" aria-hidden="true">
+        <div className="up-marquee">
+          {[...MARQUEE, ...MARQUEE].map((item, index) => (
+            <span key={`${item}-${index}`}>{item}</span>
+          ))}
         </div>
+      </div>
 
-        <nav style={{ display: 'flex', gap: 4 }}>
+      <div className="up-header">
+        <button type="button" className="up-logo" onClick={() => onNavigate('home')} aria-label="UpOnly home">
+          <img src="/iso.png" alt="" width={32} height={32} />
+          <span className="up-brand">UPONLY</span>
+          <span className="up-tagline">THE LONG-ONLY SUPERSTORE</span>
+        </button>
+
+        <nav className="up-tabs" aria-label="Primary">
           {[
-            { id: 'home', label: 'Markets' },
-            { id: 'bets', label: 'Positions' },
+            { id: 'home', label: 'The Lot' },
+            { id: 'bets', label: 'My Garage' },
           ].map(item => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
-              style={{
-                background: currentView === item.id ? 'var(--accent-dim)' : 'transparent',
-                color: currentView === item.id ? 'var(--accent)' : 'var(--text-secondary)',
-                border: 'none',
-                borderRadius: 6,
-                padding: '6px 12px',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-heading)',
-                transition: 'all 0.15s',
-              }}
-            >{item.label}</button>
-          ))}
-        </nav>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {devMode && (
-          <span
-            title="Dev mode active - type D-E-V to toggle off"
-            style={{
-              fontSize: 10, fontWeight: 700,
-              padding: '4px 8px', borderRadius: 4,
-              background: 'var(--red-dim)', color: 'var(--red)',
-              border: '1px solid var(--red)',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: 1.5,
-              textTransform: 'uppercase',
-            }}
-          >DEV</span>
-        )}
-        <div className="theme-toggle" role="group" aria-label="Theme">
-          {THEME_SEGS.map(seg => (
-            <button
-              key={seg.id}
               type="button"
-              onClick={() => onSetTheme(seg.id)}
-              className={`seg ${theme === seg.id ? 'on' : ''}`}
-              aria-pressed={theme === seg.id}
-              aria-label={`${seg.label} theme`}
-              title={`${seg.label} theme`}
+              onClick={() => onNavigate(item.id)}
+              className={`up-tab ${currentView === item.id ? 'is-active' : ''}`}
             >
-              {seg.glyph}
+              {item.label}
             </button>
           ))}
-        </div>
-        {connected ? (
-          <>
-            <button
-              onClick={onAddFunds}
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '6px 12px',
-                color: 'var(--accent)',
-                fontSize: 12, fontWeight: 600,
-                fontFamily: 'var(--font-heading)',
-                cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}
-            >+ Add funds</button>
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '6px 14px',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Balance</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-                ${formatUsdcBalance(usdcBalance)}
-              </span>
-            </div>
-            <div
-              title={injAddress}
-              className="wallet-menu"
-            >
-              <button type="button" className="wallet-menu-trigger" aria-haspopup="menu">
-                <span>
-                  {ethAddress.slice(0, 6)}...{ethAddress.slice(-4)}
-                </span>
-                <span className="wallet-menu-arrow">▾</span>
+        </nav>
+
+        <div className="up-head-actions">
+          {devMode && (
+            <span className="up-dev-pill" title="Dev mode active. Type D-E-V to toggle off.">
+              DEV
+            </span>
+          )}
+          <span className={`up-rfq-badge ${connected && rfqReady ? 'is-ready' : ''}`}>
+            {rfqLabel}
+          </span>
+
+          <div className="theme-toggle" role="group" aria-label="Theme">
+            {THEME_SEGS.map(seg => (
+              <button
+                key={seg.id}
+                type="button"
+                onClick={() => onSetTheme(seg.id)}
+                className={`seg ${theme === seg.id ? 'on' : ''}`}
+                aria-pressed={theme === seg.id}
+                aria-label={`${seg.label} theme`}
+                title={`${seg.label} theme`}
+              >
+                {seg.glyph}
               </button>
-              <div className="wallet-menu-dropdown" role="menu">
-                {sessionActive && (
+            ))}
+          </div>
+
+          {connected ? (
+            <>
+              <button type="button" className="up-add-cash" onClick={onAddFunds}>
+                + Add Cash
+              </button>
+              <div className="up-wallet-pill">
+                <span>USDC</span>
+                <strong>${formatUsdcBalance(usdcBalance)}</strong>
+              </div>
+              <div title={injAddress} className="wallet-menu">
+                <button type="button" className="wallet-menu-trigger" aria-haspopup="menu">
+                  <span>
+                    {ethAddress.slice(0, 6)}...{ethAddress.slice(-4)}
+                  </span>
+                  <span className="wallet-menu-arrow">v</span>
+                </button>
+                <div className="wallet-menu-dropdown" role="menu">
+                  {sessionActive && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={onRevokeAutosign}
+                      disabled={revokingAutosign}
+                      className="wallet-menu-item is-danger"
+                    >
+                      {revokingAutosign ? 'Revoking autosign...' : 'Revoke autosign'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={onRevokeAutosign}
-                    disabled={revokingAutosign}
-                    className="wallet-menu-item is-danger"
+                    onClick={disconnect}
+                    className="wallet-menu-item"
                   >
-                    {revokingAutosign ? 'Revoking autosign...' : 'Revoke autosign'}
+                    Disconnect wallet
                   </button>
-                )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={disconnect}
-                  className="wallet-menu-item"
-                >
-                  Disconnect wallet
-                </button>
+                </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <button
-            onClick={connect}
-            disabled={connecting}
-            style={{
-              background: connecting ? 'var(--bg-primary)' : 'var(--accent-grad)',
-              color: connecting ? 'var(--text-muted)' : 'var(--on-accent)',
-              border: connecting ? '1px solid var(--border)' : 'none',
-              borderRadius: 8,
-              padding: '8px 20px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: connecting ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-heading)',
-            }}
-          >
-            {connecting ? 'Connecting...' : 'Connect Wallet'}
-          </button>
-        )}
+            </>
+          ) : (
+            <button type="button" className="up-connect" onClick={connect} disabled={connecting}>
+              {connecting ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

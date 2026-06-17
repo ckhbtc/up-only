@@ -1,100 +1,251 @@
+import { useEffect, useMemo, useState } from 'react';
 import Sparkline from './Sparkline';
 import CoinLogo from './CoinLogo';
-import { formatPrice } from '../data/mockData';
-import { maxLongConfigForMarket } from '../services/upOnly';
+import { formatPrice, formatUsdcBalance, liquidationPrice } from '../data/mockData';
+import { RFQ_OPEN_SLIPPAGE } from '../services/leverageLimits';
+import { RFQ_PREQUOTE_INTERVAL_MS } from '../services/rfqConstants';
+import { buildRfqOrderInput, sendRfqPrequoteRequest } from '../services/rfq';
+import {
+  UP_ONLY_DIRECTION,
+  UP_ONLY_LEVERAGE_KEY,
+  UP_ONLY_SIDE,
+  UP_ONLY_TARGET_MODE,
+  maxLongConfigForMarket,
+} from '../services/upOnly';
 
-export default function MarketCard({ market, onPlaceBet }) {
-  const isUp = market.change24h >= 0;
-  const maxConfig = maxLongConfigForMarket(market);
+function sanitizeAmount(raw) {
+  const cleaned = raw.replace(/[^0-9.]/g, '');
+  const [whole, ...fractionParts] = cleaned.split('.');
+  const normalizedWhole = whole.replace(/^0+(?=\d)/, '') || '';
+  if (fractionParts.length === 0) return normalizedWhole;
+  return `${normalizedWhole || '0'}.${fractionParts.join('').slice(0, 2)}`;
+}
+
+function formatAmountInput(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  if (n >= 100) return String(Math.floor(n));
+  return n.toFixed(2).replace(/\.?0+$/, '');
+}
+
+export default function MarketCard({
+  market,
+  balance,
+  requestAddress,
+  connected,
+  connecting,
+  rfqReady = false,
+  authorizing = false,
+  opened = false,
+  opening = false,
+  error = '',
+  onConnect,
+  onAuthorize,
+  onConfirm,
+}) {
+  const [stake, setStake] = useState('100');
+  const price = Number(market.price) || 0;
+  const priceDecimals = market.priceDecimals;
+  const isUp = Number(market.change24h || 0) >= 0;
+  const balanceNum = Number(balance || 0);
+  const stakeNum = Number(stake) || 0;
+  const maxConfig = useMemo(() => maxLongConfigForMarket(market), [market]);
+  const leverage = maxConfig.leverage;
+  const positionSize = stakeNum * leverage;
+  const insufficient = connected && stakeNum > balanceNum;
+  const emptyStake = stakeNum < 1;
+  const liqPrice = useMemo(() => liquidationPrice({
+    entryPrice: price,
+    leverage,
+    direction: UP_ONLY_DIRECTION,
+    mmr: Number(market.maintenanceMarginRatio) || 0.025,
+  }), [price, market.maintenanceMarginRatio, leverage]);
+
+  const canSubmit = connected
+    && rfqReady
+    && !opening
+    && !emptyStake
+    && !insufficient
+    && maxConfig.allowed;
+
+  const ctaLabel = (() => {
+    if (!connected) return connecting ? 'CONNECTING...' : 'CONNECT WALLET';
+    if (!rfqReady) return authorizing ? 'AUTHORIZING...' : 'AUTHORIZE RFQ';
+    if (opening) return 'OPENING...';
+    if (!maxConfig.allowed) return 'MAX UNAVAILABLE';
+    if (emptyStake) return 'ENTER CASH';
+    if (insufficient) return 'NEED CASH';
+    return 'UPONLY >';
+  })();
+
+  const handleAmount = (raw) => setStake(sanitizeAmount(raw));
+  const handleHalf = () => setStake(formatAmountInput(balanceNum / 2));
+  const handleAll = () => setStake(formatAmountInput(balanceNum));
+
+  const handleSubmit = () => {
+    if (!connected) {
+      onConnect?.();
+      return;
+    }
+    if (!rfqReady) {
+      if (!authorizing) onAuthorize?.();
+      return;
+    }
+    if (!canSubmit) return;
+
+    onConfirm({
+      market,
+      direction: UP_ONLY_DIRECTION,
+      side: UP_ONLY_SIDE,
+      stake: stakeNum,
+      winTarget: 0,
+      aggr: UP_ONLY_LEVERAGE_KEY,
+      aggrLabel: maxConfig.label,
+      aggrColor: maxConfig.color,
+      leverage,
+      targetMode: UP_ONLY_TARGET_MODE,
+      targetPrice: null,
+      liqPrice,
+    });
+  };
+
+  useEffect(() => {
+    if (!requestAddress || !rfqReady || !maxConfig.allowed || stakeNum < 1) return;
+    if (!price || price <= 0) return;
+
+    let cancelled = false;
+    const sendPrequotes = async () => {
+      if (cancelled) return;
+      try {
+        const input = buildRfqOrderInput({
+          market,
+          oraclePrice: price,
+          side: UP_ONLY_SIDE,
+          stakeUsdt: stakeNum,
+          leverage,
+          slippage: RFQ_OPEN_SLIPPAGE,
+        });
+        await sendRfqPrequoteRequest({
+          requestAddress,
+          marketId: market.marketId,
+          ...input,
+        });
+      } catch {
+        // Warmup only. The final click still validates RFQ input.
+      }
+    };
+
+    void sendPrequotes();
+    const interval = setInterval(() => {
+      void sendPrequotes();
+    }, RFQ_PREQUOTE_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [
+    requestAddress,
+    rfqReady,
+    maxConfig.allowed,
+    stakeNum,
+    leverage,
+    market,
+    price,
+  ]);
 
   return (
-    <div
-      className="bauhaus-deco"
-      onClick={() => onPlaceBet(market)}
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: 14,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        position: 'relative',
-        minHeight: 132,
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = 'var(--bg-card-hover)';
-        e.currentTarget.style.borderColor = 'var(--border-light)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'var(--bg-card)';
-        e.currentTarget.style.borderColor = 'var(--border)';
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-          <CoinLogo symbol={market.symbol} logoUrl={market.logo} size={34} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              fontSize: 16, fontWeight: 700, letterSpacing: 0,
-              fontFamily: 'var(--font-heading)',
-              lineHeight: 1.2,
-            }}>{market.symbol}</div>
-            <div style={{
-              fontSize: 9, fontWeight: 500,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--text-muted)',
-              letterSpacing: 0.6,
-              textTransform: 'uppercase',
-              marginTop: 2,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: 132,
-            }}>{market.name}</div>
+    <article className="up-card">
+      <div className="up-hot-ribbon">NO SHORTS - NO SLIDERS - MAX ONLY</div>
+
+      <div className="up-card-top">
+        <div className="up-token">
+          <CoinLogo symbol={market.symbol} logoUrl={market.logo} size={42} />
+          <div>
+            <h2>{market.symbol}</h2>
+            <p>{market.name}</p>
           </div>
         </div>
-        <Sparkline data={market.sparkline} color={isUp ? 'var(--green)' : 'var(--red)'} />
+        <div className={`up-heat ${isUp ? 'is-up' : 'is-down'}`}>
+          {isUp ? '+' : '-'}{Math.abs(Number(market.change24h || 0)).toFixed(2)}%
+        </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div className="up-price-row">
         <div>
-          <div style={{
-            fontSize: 24, fontWeight: 700, letterSpacing: 0,
-            fontFamily: 'var(--font-heading)',
-            lineHeight: 1,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            ${formatPrice(market.price, market.priceDecimals)}
-          </div>
-          <div style={{
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            color: isUp ? 'var(--green)' : 'var(--red)',
-            fontWeight: 500,
-            marginTop: 6,
-          }}>
-            {isUp ? '↑' : '↓'} {Math.abs(market.change24h).toFixed(2)}%
-          </div>
+          <span className="up-label">Sticker price</span>
+          <strong className="up-price">${formatPrice(price, priceDecimals)}</strong>
         </div>
-        <button style={{
-          background: 'var(--accent-grad)',
-          color: 'var(--on-accent)',
-          border: 'none',
-          borderRadius: 8,
-          padding: '9px 12px',
-          fontSize: 11,
-          fontWeight: 600,
-          cursor: 'pointer',
-          fontFamily: 'var(--font-heading)',
-          letterSpacing: 0,
-          flexShrink: 0,
-        }}>
-          {maxConfig.label}
-        </button>
+        <Sparkline data={market.sparkline} width={112} height={42} color={isUp ? 'var(--green)' : 'var(--red)'} />
       </div>
-    </div>
+
+      <div className="up-facts">
+        <div>
+          <span>Direction</span>
+          <strong>LONG ONLY</strong>
+        </div>
+        <div>
+          <span>Leverage</span>
+          <strong>{maxConfig.label}</strong>
+        </div>
+        <div>
+          <span>Liq est.</span>
+          <strong>${formatPrice(liqPrice, priceDecimals)}</strong>
+        </div>
+      </div>
+
+      <div className="up-amount-row">
+        <label htmlFor={`stake-${market.marketId}`}>
+          Cash down
+          <span>${formatUsdcBalance(balanceNum)} ready</span>
+        </label>
+        <div className="up-amount-control">
+          <span>$</span>
+          <input
+            id={`stake-${market.marketId}`}
+            type="text"
+            inputMode="decimal"
+            value={stake}
+            onChange={event => handleAmount(event.target.value)}
+            placeholder="0"
+            aria-label={`${market.symbol} UpOnly amount`}
+          />
+        </div>
+        <div className="up-chip-row" aria-label="Quick amount">
+          <button type="button" className="up-chip" onClick={handleHalf} disabled={!connected || balanceNum <= 0}>
+            HALF
+          </button>
+          <button type="button" className="up-chip" onClick={handleAll} disabled={!connected || balanceNum <= 0}>
+            ALL-IN
+          </button>
+        </div>
+      </div>
+
+      <div className="up-position-strip">
+        <span>Position size</span>
+        <strong>${formatPrice(positionSize)}</strong>
+      </div>
+
+      {(insufficient || error) && (
+        <div className="up-error-stamp" role="alert">
+          {error || `Need more USDC. Balance is $${formatUsdcBalance(balanceNum)}.`}
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="up-cta"
+        onClick={handleSubmit}
+        disabled={connecting || (connected && rfqReady && !canSubmit)}
+      >
+        {ctaLabel}
+      </button>
+
+      {opened && (
+        <div className="up-stamp-overlay" aria-live="polite">
+          <div className="up-stamp">UPONLY OPENED!</div>
+        </div>
+      )}
+    </article>
   );
 }
