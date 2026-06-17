@@ -49,8 +49,8 @@ export default function TopBar({
 
         <nav className="up-tabs" aria-label="Primary">
           {[
-            { id: 'home', label: 'The Lot' },
-            { id: 'bets', label: 'My Garage' },
+            { id: 'home', label: 'Pairs' },
+            { id: 'bets', label: 'Positions' },
           ].map(item => (
             <button
               key={item.id}

@@ -26,20 +26,20 @@ the app. `50x` or similar is acceptable only as a leverage fact.
 
 1. Connect wallet.
 2. Authorize RFQ autosign if needed.
-3. Stay on `The Lot`.
+3. Stay on `Pairs`.
 4. Enter amount directly on a market card.
 5. Use `HALF` or `ALL-IN` when useful.
 6. Click `UPONLY >`.
 7. Show a transient `UPONLY OPENED!` stamp on that card.
-8. Track and cash out positions in `My Garage`.
+8. Track and cash out positions in `Positions`.
 
 There is no direction toggle, leverage selector, order review panel,
 confirmation modal, take-profit input, or short flow.
 
 ## Navigation
 
-- `The Lot`: market cards with inline order controls.
-- `My Garage`: active UpOnly positions and cash-out actions.
+- `Pairs`: market cards with inline order controls.
+- `Positions`: active UpOnly positions and cash-out actions.
 - Header actions: RFQ readiness badge, theme toggle, add cash, wallet menu.
 - Marquee: product-level urgency and one-line rules.
 
@@ -78,8 +78,8 @@ Each card is both market display and order ticket:
 Preferred:
 
 - `UpOnly`
-- `The Lot`
-- `My Garage`
+- `Pairs`
+- `Positions`
 - `UPONLY >`
 - `UPONLY OPENED!`
 - `UP ONLY`
@@ -111,5 +111,5 @@ Avoid:
 
 - Final card density for mobile once real market count is high.
 - Whether to add favorites or volume sorting beyond the current hottest sort.
-- Whether `My Garage` should include realized history in a later version.
+- Whether `Positions` should include realized history in a later version.
 - Whether advanced liquidation math belongs in an optional drawer.
