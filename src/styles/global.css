@@ -388,6 +388,21 @@ input:focus-visible {
   width: 24px;
 }
 
+.theme-toggle .theme-icon {
+  fill: none;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: 15px;
+}
+
+.theme-toggle .theme-icon circle,
+.theme-toggle .theme-icon path:first-child {
+  fill: currentColor;
+}
+
 .theme-toggle .seg.on {
   background: var(--blue);
   color: #fff;

@@ -2,9 +2,26 @@ import useWalletStore from '../stores/walletStore';
 import { formatUsdcBalance } from '../data/mockData';
 
 const THEME_SEGS = [
-  { id: 'bauhaus', glyph: 'L', label: 'Light' },
-  { id: 'bauhaus-dark', glyph: 'D', label: 'Dark' },
+  { id: 'bauhaus', icon: 'sun', label: 'Light' },
+  { id: 'bauhaus-dark', icon: 'moon', label: 'Dark' },
 ];
+
+function ThemeIcon({ icon }) {
+  if (icon === 'moon') {
+    return (
+      <svg className="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.3 15.7A8.1 8.1 0 0 1 8.3 3.7a8.7 8.7 0 1 0 12 12Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2" />
+      <path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" />
+    </svg>
+  );
+}
 
 export default function TopBar({
   onNavigate,
@@ -61,7 +78,7 @@ export default function TopBar({
                 aria-label={`${seg.label} theme`}
                 title={`${seg.label} theme`}
               >
-                {seg.glyph}
+                <ThemeIcon icon={seg.icon} />
               </button>
             ))}
           </div>
