@@ -20,7 +20,7 @@ export function maxLongConfigForMarket(market) {
   return {
     key: UP_ONLY_LEVERAGE_KEY,
     leverage,
-    label: `${formatLeverage(leverage)}x Max`,
+    label: `${formatLeverage(leverage)}x`,
     desc: 'Maximum long exposure for this market',
     color: UP_ONLY_LEVERAGE_COLOR,
     allowed: isOpenLeverageAllowed({

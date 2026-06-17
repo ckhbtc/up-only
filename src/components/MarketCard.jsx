@@ -180,16 +180,16 @@ export default function MarketCard({
       </div>
 
       <div className="up-facts">
-        <div>
+        <div className="up-fact up-fact-direction">
           <span>Direction</span>
-          <strong>LONG ONLY</strong>
+          <strong>UP ONLY</strong>
         </div>
-        <div>
+        <div className="up-fact up-fact-leverage">
           <span>Leverage</span>
           <strong>{maxConfig.label}</strong>
         </div>
-        <div>
-          <span>Liq est.</span>
+        <div className="up-fact up-fact-liquidation">
+          <span>Est liq</span>
           <strong>${formatPrice(liqPrice, priceDecimals)}</strong>
         </div>
       </div>

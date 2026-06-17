@@ -20,7 +20,7 @@ trading lot. It should feel loud, direct, and intentionally commercial:
 - Fast market scanning with no separate order panel.
 
 Use the name `UpOnly` everywhere. Prior product-name copy should not appear in
-the app. `50x Max` or similar is acceptable only as a leverage fact.
+the app. `50x` or similar is acceptable only as a leverage fact.
 
 ## Core Flow
 
@@ -50,7 +50,7 @@ Each card is both market display and order ticket:
 - Asset logo, symbol, and market name.
 - 24h move sticker.
 - Price and sparkline.
-- Fixed facts: `LONG ONLY`, market max leverage, liquidation estimate.
+- Fixed facts: `UP ONLY`, market max leverage, estimated liquidation.
 - Amount input with a dollar prefix.
 - Balance label.
 - `HALF` and `ALL-IN` chips.
@@ -82,8 +82,8 @@ Preferred:
 - `My Garage`
 - `UPONLY >`
 - `UPONLY OPENED!`
-- `LONG ONLY`
-- `50x Max`
+- `UP ONLY`
+- `50x`
 - `Authorize RFQ`
 - `Add Cash`
 - `Cash Out`
