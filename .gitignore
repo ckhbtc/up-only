@@ -1,0 +1,8 @@
+node_modules
+dist
+CLAUDE.md
+DEPLOYMENT.md
+.DS_Store
+.env
+.env.local
+sessions.json

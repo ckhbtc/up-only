@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/iso.png" />
+    <title>Up Only - Max Longs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Archivo+Black&family=Familjen+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // Set theme BEFORE first paint to avoid FOUC.
+      // Order: localStorage > 'bauhaus' default.
+      // Migrate legacy values: old 'dark' (Atrium) → 'bauhaus-dark'; 'light' (Hearth) → 'bauhaus'.
+      (function () {
+        try {
+          var saved = localStorage.getItem('up-only-theme');
+          if (saved === 'dark') saved = 'bauhaus-dark';
+          if (saved === 'light') saved = 'bauhaus';
+          var t = (saved === 'bauhaus' || saved === 'bauhaus-dark') ? saved : 'bauhaus';
+          document.documentElement.dataset.theme = t;
+          if (t !== localStorage.getItem('up-only-theme')) {
+            localStorage.setItem('up-only-theme', t);
+          }
+        } catch (e) {
+          document.documentElement.dataset.theme = 'bauhaus';
+        }
+      })();
+    </script>
+    <style>
+      html { background: #f5f7f4; color: #101714; }
+      html[data-theme="bauhaus-dark"] { background: #07100c; color: #effff5; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

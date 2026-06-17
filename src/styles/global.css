@@ -1,0 +1,679 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/*
+ * Two themes, both using the Up Only signal palette.
+ * Toggle by setting data-theme on <html>. The init script in index.html
+ * sets it before first paint to avoid FOUC.
+ */
+
+:root,
+[data-theme="bauhaus"] {
+  --bg-primary:    #f5f7f4;
+  --bg-secondary:  #e7eee8;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #edf7f0;
+  --border:        #101714;
+  --border-light:  #101714;
+  --text-primary:   #101714;
+  --text-secondary: #2a3932;
+  --text-muted:     #617168;
+  --accent:        #19a974;
+  --accent-light:  #d7ff3f;
+  --accent-dim:    rgba(25, 169, 116, 0.16);
+  --accent-grad:   linear-gradient(135deg, #19a974, #d7ff3f);
+  --on-accent:     #07100c;
+  --green:         #11865d;
+  --green-dim:     rgba(17, 134, 93, 0.16);
+  --orange:        #d38b05;
+  --orange-dim:    rgba(211, 139, 5, 0.18);
+  --red:           #d9362b;
+  --red-dim:       rgba(217, 54, 43, 0.15);
+  --blue:          #2454d6;
+  --blue-grad:     linear-gradient(135deg, #2454d6, #19a974);
+  --overlay:       rgba(16, 23, 20, 0.58);
+  --font-heading:  'Archivo Black', 'Funnel Display', sans-serif;
+  --font-body:     'Familjen Grotesk', 'Onest', sans-serif;
+  --font-mono:     'JetBrains Mono', 'SF Mono', monospace;
+  --stamp-bg:      #101714;
+  --stamp-fg:      #d7ff3f;
+  --focus-ring:    #101714;
+}
+
+[data-theme="bauhaus-dark"] {
+  --bg-primary:    #07100c;
+  --bg-secondary:  #0c1712;
+  --bg-card:       #111f19;
+  --bg-card-hover: #172820;
+  --border:        #dff7e7;
+  --border-light:  #dff7e7;
+  --text-primary:   #effff5;
+  --text-secondary: #c8ddcf;
+  --text-muted:     #8ea397;
+  --accent:        #28e08a;
+  --accent-light:  #d7ff3f;
+  --accent-dim:    rgba(40, 224, 138, 0.18);
+  --accent-grad:   linear-gradient(135deg, #28e08a, #d7ff3f);
+  --on-accent:     #06100b;
+  --green:         #28e08a;
+  --green-dim:     rgba(40, 224, 138, 0.20);
+  --orange:        #ffc247;
+  --orange-dim:    rgba(255, 194, 71, 0.20);
+  --red:           #ff5b4f;
+  --red-dim:       rgba(255, 91, 79, 0.20);
+  --blue:          #79a4ff;
+  --blue-grad:     linear-gradient(135deg, #79a4ff, #28e08a);
+  --overlay:       rgba(0, 0, 0, 0.72);
+  --stamp-bg:      #d7ff3f;
+  --stamp-fg:      #06100b;
+  --focus-ring:    #dff7e7;
+}
+
+html, body {
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 12px 4px rgba(34, 197, 94, 0.15); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.15); }
+}
+
+@keyframes confetti-fall {
+  0%   { transform: translate(0, -20px) rotate(0deg); opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translate(var(--drift, 0), 105vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes modal-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes modal-pop-in {
+  0% { opacity: 0; transform: translateY(18px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tx-ribbon-enter {
+  0% { opacity: 0; transform: translateY(16px) rotate(-1.4deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(-1.4deg); }
+}
+
+@keyframes tx-ribbon-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes tx-panel-pop {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tx-phase-pulse {
+  0%, 100% { transform: translateY(0); background: var(--bg-card); color: var(--text-muted); }
+  45% { transform: translateY(-2px); background: var(--accent-light); color: var(--border); }
+}
+
+.tx-status-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.tx-status-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-heading);
+  animation: slide-up 0.3s ease;
+  max-width: min(400px, calc(100vw - 32px));
+  text-align: center;
+  line-height: 1.35;
+}
+
+.tx-status-toast .tx-status-link {
+  margin-left: 6px;
+}
+
+.tx-status-success {
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+
+.tx-status-warning {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.tx-status-info {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.tx-status-error {
+  background: var(--red-dim);
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+.wallet-menu {
+  position: relative;
+  font-family: var(--font-mono);
+}
+
+.wallet-menu-trigger {
+  background: var(--blue-grad);
+  border: none;
+  border-radius: 0;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 10px 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.wallet-menu-arrow {
+  border-left: 1px solid rgba(255,255,255,0.22);
+  padding-left: 8px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.wallet-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 220;
+  min-width: 210px;
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  box-shadow: 6px 6px 0 var(--accent-light);
+  padding: 6px;
+  display: none;
+}
+
+.wallet-menu:hover .wallet-menu-dropdown,
+.wallet-menu:focus-within .wallet-menu-dropdown {
+  display: grid;
+  gap: 6px;
+}
+
+.wallet-menu-item {
+  width: 100%;
+  min-height: 36px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.wallet-menu-item:hover,
+.wallet-menu-item:focus {
+  background: var(--accent-light);
+  outline: none;
+}
+
+.wallet-menu-item.is-danger {
+  background: var(--red-dim);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.wallet-menu-item:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.tx-loading-stage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: clamp(150px, 38vh, 390px);
+  z-index: 320;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.tx-loading-ribbon {
+  width: 100vw;
+  overflow: hidden;
+  background: var(--accent-light);
+  border-top: 4px solid var(--border);
+  border-bottom: 4px solid var(--border);
+  box-shadow: 8px 8px 0 var(--accent);
+  transform: rotate(-1.4deg);
+  animation: tx-ribbon-enter 0.18s ease-out;
+}
+
+.tx-loading-track {
+  display: flex;
+  width: max-content;
+  animation: tx-ribbon-scroll var(--tx-ribbon-duration, 5.5s) linear infinite;
+  will-change: transform;
+}
+
+.tx-loading-word {
+  display: inline-flex;
+  align-items: center;
+  height: clamp(64px, 8vw, 118px);
+  padding: 0 clamp(22px, 4vw, 58px);
+  color: var(--border);
+  font-family: var(--font-heading);
+  font-size: clamp(30px, 5.6vw, 82px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 3px 3px 0 rgba(250, 246, 232, 0.55);
+}
+
+.tx-loading-word::after {
+  content: "";
+  width: clamp(12px, 1.8vw, 26px);
+  height: clamp(12px, 1.8vw, 26px);
+  margin-left: clamp(22px, 4vw, 58px);
+  background: var(--accent);
+  border: 3px solid var(--border);
+}
+
+.tx-loading-panel {
+  pointer-events: auto;
+  min-width: min(520px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 var(--accent);
+  padding: 12px 16px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  animation: tx-panel-pop 0.18s ease-out;
+}
+
+.tx-loading-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.tx-loading-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border: 2px solid var(--border);
+  flex: 0 0 auto;
+  animation: tx-phase-pulse 0.9s ease-in-out infinite;
+}
+
+.tx-loading-phases {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tx-loading-phase {
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  padding: 4px 8px;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  animation: tx-phase-pulse 1.25s ease-in-out infinite;
+}
+
+.empty-bets-stage {
+  min-height: clamp(320px, 52vh, 620px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 44px;
+  pointer-events: none;
+}
+
+.empty-bets-banner {
+  position: relative;
+  width: min(920px, calc(100vw - 40px));
+  background: var(--accent-light);
+  border: 4px solid var(--border);
+  box-shadow: 10px 10px 0 var(--accent);
+  transform: rotate(1deg);
+  overflow: hidden;
+  text-align: center;
+  padding: 24px 64px 28px;
+}
+
+.empty-bets-banner::before,
+.empty-bets-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border: 3px solid var(--border);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.empty-bets-banner::before {
+  left: 24px;
+}
+
+.empty-bets-banner::after {
+  right: 24px;
+}
+
+.empty-bets-word {
+  display: block;
+  color: var(--border);
+  font-family: var(--font-heading);
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 3px 3px 0 rgba(250, 246, 232, 0.55);
+}
+
+@media (max-width: 900px) {
+  .empty-bets-banner {
+    padding: 22px 44px 26px;
+  }
+
+  .empty-bets-word {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tx-loading-stage {
+    top: 34vh;
+    gap: 10px;
+  }
+
+  .tx-loading-panel {
+    min-width: calc(100vw - 28px);
+    padding: 10px 12px;
+  }
+
+  .tx-loading-message {
+    font-size: 12px;
+  }
+
+  .empty-bets-stage {
+    min-height: clamp(280px, 48vh, 460px);
+    padding: 16px 12px 36px;
+  }
+
+  .empty-bets-banner {
+    width: calc(100vw - 28px);
+    padding: 22px 28px 24px;
+    box-shadow: 7px 7px 0 var(--accent);
+  }
+
+  .empty-bets-banner::before,
+  .empty-bets-banner::after {
+    width: 14px;
+    height: 14px;
+  }
+
+  .empty-bets-banner::before {
+    left: 10px;
+  }
+
+  .empty-bets-banner::after {
+    right: 10px;
+  }
+
+  .empty-bets-word {
+    font-size: 34px;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-loading-track,
+  .tx-loading-dot,
+  .tx-loading-phase,
+  .tx-loading-ribbon,
+  .tx-loading-panel {
+    animation: none;
+  }
+}
+
+/* ─── Theme toggle (2-segment pill: bauhaus light / bauhaus dark) ────────── */
+
+.theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 999px !important;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  flex-shrink: 0;
+  gap: 0;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+
+.theme-toggle .seg {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.2s, color 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.theme-toggle .seg:hover { color: var(--text-primary); }
+.theme-toggle .seg.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Panel structural rules, applied to both light and dark.
+ * The components use CSS variables for color, so palette flips automatically.
+ * These rules flatten radii, thicken borders, and convert the rounded SaaS
+ * vibe into a constructivist poster vibe. Inline styles in components force
+ * !important on the geometry rules.
+ */
+[data-theme="bauhaus"] body,
+[data-theme="bauhaus-dark"] body {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+[data-theme="bauhaus"] h1,
+[data-theme="bauhaus"] h2,
+[data-theme="bauhaus"] h3,
+[data-theme="bauhaus"] h4,
+[data-theme="bauhaus-dark"] h1,
+[data-theme="bauhaus-dark"] h2,
+[data-theme="bauhaus-dark"] h3,
+[data-theme="bauhaus-dark"] h4 {
+  font-family: 'Archivo Black', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-weight: 900;
+}
+
+/* Flatten every rounded panel/button to 0 radius and thicken borders to 3px
+ * where they're touching the page background. Inline styles win specificity
+ * battles, so target the inline-styled containers via attribute selectors.
+ * Preserve true circles (50% radius) - logos/avatars/decorations stay round. */
+[data-theme="bauhaus"] [style*="border-radius"]:not([style*="50%"]),
+[data-theme="bauhaus"] [style*="borderRadius"]:not([style*="50%"]),
+[data-theme="bauhaus-dark"] [style*="border-radius"]:not([style*="50%"]),
+[data-theme="bauhaus-dark"] [style*="borderRadius"]:not([style*="50%"]) {
+  border-radius: 0 !important;
+}
+[data-theme="bauhaus"] [style*="border: 1px"],
+[data-theme="bauhaus"] [style*="border:1px"],
+[data-theme="bauhaus-dark"] [style*="border: 1px"],
+[data-theme="bauhaus-dark"] [style*="border:1px"] {
+  border-width: 2px !important;
+}
+[data-theme="bauhaus"] [style*="border: 2px"],
+[data-theme="bauhaus"] [style*="border:2px"],
+[data-theme="bauhaus-dark"] [style*="border: 2px"],
+[data-theme="bauhaus-dark"] [style*="border:2px"] {
+  border-width: 3px !important;
+}
+
+/* Section headlines: poster stamp - colors flip via --stamp-bg / --stamp-fg. */
+[data-theme="bauhaus"] h1,
+[data-theme="bauhaus-dark"] h1 {
+  background: var(--stamp-bg);
+  color: var(--stamp-fg);
+  display: inline-block;
+  padding: 0.2em 0.5em 0.25em;
+  margin-bottom: 0.4em !important;
+  font-size: 2.4rem !important;
+  letter-spacing: 0 !important;
+}
+
+/* Pill toggle keeps its rounded shape - it's a control, not a panel. */
+[data-theme="bauhaus"] .theme-toggle,
+[data-theme="bauhaus-dark"] .theme-toggle {
+  border-radius: 999px !important;
+}
+
+/* Decorative geometric stamp on every card-shaped element. */
+[data-theme="bauhaus"] .bauhaus-deco,
+[data-theme="bauhaus-dark"] .bauhaus-deco {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="bauhaus"] .bauhaus-deco::after,
+[data-theme="bauhaus-dark"] .bauhaus-deco::after {
+  content: '';
+  position: absolute;
+  bottom: -22px;
+  right: -22px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50% !important;
+  background: var(--accent-light);
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="bauhaus"] .bauhaus-deco > *,
+[data-theme="bauhaus-dark"] .bauhaus-deco > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Sharp focus rings instead of soft. */
+[data-theme="bauhaus"] button:focus-visible,
+[data-theme="bauhaus"] input:focus-visible,
+[data-theme="bauhaus-dark"] button:focus-visible,
+[data-theme="bauhaus-dark"] input:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
