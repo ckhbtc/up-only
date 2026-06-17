@@ -147,11 +147,6 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-@keyframes up-marq {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 @keyframes slide-up {
   0% { opacity: 0; transform: translateY(18px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -222,34 +217,6 @@ input:focus-visible {
   position: sticky;
   top: 0;
   z-index: 100;
-}
-
-.up-marquee-wrap {
-  background: var(--red);
-  border-bottom: 3px solid var(--border);
-  color: #fff;
-  height: 30px;
-  overflow: hidden;
-}
-
-.up-marquee {
-  align-items: center;
-  animation: up-marq 24s linear infinite;
-  display: flex;
-  height: 100%;
-  width: max-content;
-}
-
-.up-marquee span {
-  border-right: 3px solid var(--border);
-  color: #fff;
-  display: inline-flex;
-  font-family: var(--font-heading);
-  font-size: 17px;
-  line-height: 1;
-  padding: 6px 28px;
-  text-shadow: 2px 2px 0 var(--border);
-  white-space: nowrap;
 }
 
 .up-header {
@@ -341,7 +308,6 @@ input:focus-visible {
 }
 
 .up-dev-pill,
-.up-rfq-badge,
 .up-wallet-pill,
 .up-add-cash,
 .up-connect {
@@ -360,18 +326,6 @@ input:focus-visible {
   color: #fff;
   display: inline-flex;
   padding: 6px 9px;
-}
-
-.up-rfq-badge {
-  align-items: center;
-  background: var(--orange);
-  color: var(--border);
-  display: inline-flex;
-  padding: 6px 10px;
-}
-
-.up-rfq-badge.is-ready {
-  background: var(--accent-light);
 }
 
 .up-add-cash,
@@ -1301,15 +1255,6 @@ input:focus-visible {
 }
 
 @media (max-width: 640px) {
-  .up-marquee-wrap {
-    height: 28px;
-  }
-
-  .up-marquee span {
-    font-size: 14px;
-    padding: 7px 18px;
-  }
-
   .up-header {
     gap: 12px;
     padding: 10px 12px 12px;
@@ -1337,7 +1282,6 @@ input:focus-visible {
   }
 
   .up-wallet-pill,
-  .up-rfq-badge,
   .up-add-cash,
   .up-connect,
   .wallet-menu,

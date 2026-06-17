@@ -493,7 +493,6 @@ export default function App() {
         onAddFunds={() => setShowBridge(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
-        rfqReady={session.rfqReady}
         revokingAutosign={session.revoking}
         devMode={devMode}
       />

@@ -40,8 +40,7 @@ confirmation modal, take-profit input, or short flow.
 
 - `Pairs`: market cards with inline order controls.
 - `Positions`: active UpOnly positions and cash-out actions.
-- Header actions: RFQ readiness badge, theme toggle, add cash, wallet menu.
-- Marquee: product-level urgency and one-line rules.
+- Header actions: theme toggle, add cash, wallet menu.
 
 ## Market Card Requirements
 

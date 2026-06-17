@@ -6,15 +6,6 @@ const THEME_SEGS = [
   { id: 'bauhaus-dark', glyph: 'D', label: 'Dark' },
 ];
 
-const MARQUEE = [
-  'UPONLY BLOWOUT',
-  'EVERY POSITION LONG',
-  'ZERO CONFIRMATION',
-  'TYPE YOUR CASH AND CLICK',
-  'GAS-FREE AFTER SETUP',
-  'NOTHING BUT UPONLY',
-];
-
 export default function TopBar({
   onNavigate,
   currentView,
@@ -23,23 +14,13 @@ export default function TopBar({
   onAddFunds,
   onRevokeAutosign,
   sessionActive,
-  rfqReady,
   revokingAutosign,
   devMode,
 }) {
   const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect } = useWalletStore();
-  const rfqLabel = connected ? (rfqReady ? 'RFQ OPEN!' : 'AUTH NEEDED') : 'CONNECT FIRST';
 
   return (
     <header className="up-shell-head">
-      <div className="up-marquee-wrap" aria-hidden="true">
-        <div className="up-marquee">
-          {[...MARQUEE, ...MARQUEE].map((item, index) => (
-            <span key={`${item}-${index}`}>{item}</span>
-          ))}
-        </div>
-      </div>
-
       <div className="up-header">
         <button type="button" className="up-logo" onClick={() => onNavigate('home')} aria-label="UpOnly home">
           <img src="/iso.png" alt="" width={32} height={32} />
@@ -69,10 +50,6 @@ export default function TopBar({
               DEV
             </span>
           )}
-          <span className={`up-rfq-badge ${connected && rfqReady ? 'is-ready' : ''}`}>
-            {rfqLabel}
-          </span>
-
           <div className="theme-toggle" role="group" aria-label="Theme">
             {THEME_SEGS.map(seg => (
               <button
