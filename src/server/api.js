@@ -12,6 +12,24 @@ import { relayRfqBroadcast } from './rfqBroadcast.js';
 const router = express.Router();
 router.use(express.json({ limit: '64kb' }));
 
+const INIT_ACCOUNT_UNAVAILABLE = 'New wallet setup is temporarily unavailable. Please try again.';
+
+export function initAccountFailureResponse(err) {
+  const message = err?.message || '';
+  const lower = message.toLowerCase();
+
+  if (lower.includes('faucet not configured')) {
+    return { status: 503, body: { error: INIT_ACCOUNT_UNAVAILABLE } };
+  }
+  if (lower.includes('please wait before retrying')) {
+    return { status: 429, body: { error: 'Please wait before retrying.' } };
+  }
+  return {
+    status: 502,
+    body: { error: 'New wallet setup failed. Please try again.' },
+  };
+}
+
 router.post('/init-account', async (req, res) => {
   try {
     const { wallet } = req.body || {};
@@ -21,7 +39,9 @@ router.post('/init-account', async (req, res) => {
     const txHash = await initAccount(wallet);
     res.json({ ok: true, txHash });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('init-account failed:', err);
+    const response = initAccountFailureResponse(err);
+    res.status(response.status).json(response.body);
   }
 });
 
