@@ -70,9 +70,7 @@ export default function TopBar({
     <header className="up-shell-head">
       <div className="up-header">
         <button type="button" className="up-logo" onClick={() => onNavigate('home')} aria-label="UpOnly home">
-          <img src="/iso.png" alt="" width={32} height={32} />
-          <span className="up-brand">UPONLY</span>
-          <span className="up-tagline">THE LONG-ONLY SUPERSTORE</span>
+          <img className="up-logo-image" src="/up-only-logo.png" alt="" width={78} height={78} />
         </button>
 
         <nav className="up-tabs" aria-label="Primary">
