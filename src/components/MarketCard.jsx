@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import Sparkline from './Sparkline';
 import CoinLogo from './CoinLogo';
 import { formatPrice, formatUsdcBalance, liquidationPrice } from '../data/mockData';
 import { RFQ_OPEN_SLIPPAGE } from '../services/leverageLimits';
@@ -169,8 +168,12 @@ export default function MarketCard({
       <div className="up-card-top">
         <div className="up-token">
           <CoinLogo symbol={market.symbol} logoUrl={market.logo} size={42} />
-          <div>
+          <div className="up-token-main">
             <h2>{market.symbol}</h2>
+            <div className="up-market-badges" aria-label={`${market.symbol} trading constraints`}>
+              <span className="up-market-badge up-market-badge-direction">Up</span>
+              <span className="up-market-badge up-market-badge-leverage">{maxConfig.label}</span>
+            </div>
           </div>
         </div>
         <div className={`up-heat ${isUp ? 'is-up' : 'is-down'}`}>
@@ -179,25 +182,13 @@ export default function MarketCard({
       </div>
 
       <div className="up-price-row">
-        <div>
-          <span className="up-label">Sticker price</span>
+        <div className="up-price-panel">
+          <span className="up-label">Mark Price</span>
           <strong className="up-price">${formatPrice(price, priceDecimals)}</strong>
         </div>
-        <Sparkline data={market.sparkline} width={112} height={42} color={isUp ? 'var(--green)' : 'var(--red)'} />
-      </div>
-
-      <div className="up-facts">
-        <div className="up-fact up-fact-direction">
-          <span>Direction</span>
-          <strong>UP ONLY</strong>
-        </div>
-        <div className="up-fact up-fact-leverage">
-          <span>Leverage</span>
-          <strong>{maxConfig.label}</strong>
-        </div>
-        <div className="up-fact up-fact-liquidation">
-          <span>Est liq</span>
-          <strong>${formatPrice(liqPrice, priceDecimals)}</strong>
+        <div className="up-price-panel up-price-panel-liq">
+          <span className="up-label">Est Liq</span>
+          <strong className="up-liq-price">${formatPrice(liqPrice, priceDecimals)}</strong>
         </div>
       </div>
 
