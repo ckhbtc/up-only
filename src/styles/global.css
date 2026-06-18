@@ -629,7 +629,7 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 520px;
+  min-height: 0;
   overflow: hidden;
   padding: 0 14px 14px;
   position: relative;
@@ -926,7 +926,7 @@ input:focus-visible {
   font-family: var(--font-heading);
   font-size: 30px;
   line-height: 1;
-  margin-top: auto;
+  margin-top: 0;
   min-height: 62px;
   padding: 14px 10px;
   text-transform: uppercase;
