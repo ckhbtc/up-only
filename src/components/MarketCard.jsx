@@ -73,7 +73,7 @@ export default function MarketCard({
 
   const ctaLabel = (() => {
     if (!connected) return connecting ? 'CONNECTING...' : 'CONNECT WALLET';
-    if (!rfqReady) return authorizing ? 'AUTHORIZING...' : 'AUTHORIZE RFQ';
+    if (!rfqReady) return authorizing ? 'AUTHORIZING...' : 'AUTHORIZE WALLET';
     if (opening) return 'OPENING...';
     if (tradeBusy) return 'ORDER PENDING...';
     if (!maxConfig.allowed) return 'MAX UNAVAILABLE';

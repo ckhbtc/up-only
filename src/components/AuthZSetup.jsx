@@ -27,8 +27,8 @@ export default function AuthZSetup({ onAuthorize, onClose }) {
           background: 'var(--bg-card)',
           border: '3px solid var(--border)',
           borderRadius: 0,
-          padding: '32px 34px 34px',
-          maxWidth: 480,
+          padding: '26px 30px 30px',
+          maxWidth: 420,
           width: '100%',
           boxShadow: '10px 10px 0 var(--border)',
           animation: 'modal-pop-in 0.2s ease',
@@ -55,23 +55,12 @@ export default function AuthZSetup({ onAuthorize, onClose }) {
           x
         </button>
 
-        <div style={{
-          fontSize: 12,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: 5,
-          marginBottom: 10,
-          fontFamily: 'var(--font-mono)',
-        }}>
-          One-time setup
-        </div>
-
         <div
           id="authorize-title"
           style={{
-            fontSize: 30,
+            fontSize: 26,
             fontWeight: 700,
-            marginBottom: 12,
+            marginBottom: 10,
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.05,
           }}
@@ -80,35 +69,12 @@ export default function AuthZSetup({ onAuthorize, onClose }) {
         </div>
 
         <div style={{
-          fontSize: 16,
+          fontSize: 14,
           color: 'var(--text-secondary)',
-          lineHeight: 1.45,
-          marginBottom: 20,
+          lineHeight: 1.35,
+          marginBottom: 22,
         }}>
-          Sign once to open positions without a wallet popup every time.
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 10,
-          marginBottom: 24,
-        }}>
-          {['Funds stay put', 'Revoke anytime'].map((label) => (
-            <div
-              key={label}
-              style={{
-                border: '2px solid var(--border)',
-                padding: '10px 12px',
-                fontSize: 13,
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-heading)',
-                textAlign: 'center',
-              }}
-            >
-              {label}
-            </div>
-          ))}
+          Sign once to open and close positions without having to sign each transaction.
         </div>
 
         <button
@@ -121,14 +87,14 @@ export default function AuthZSetup({ onAuthorize, onClose }) {
             color: granting ? 'var(--text-muted)' : 'var(--on-accent)',
             border: granting ? '2px solid var(--border)' : '2px solid var(--accent)',
             borderRadius: 0,
-            padding: '17px 0',
-            fontSize: 17,
+            padding: '14px 0',
+            fontSize: 16,
             fontWeight: 700,
             cursor: granting ? 'wait' : 'pointer',
             fontFamily: 'var(--font-heading)',
           }}
         >
-          {granting ? 'Authorizing...' : 'Authorize Wallet'}
+          {granting ? 'Authorizing...' : 'Authorize'}
         </button>
       </div>
     </div>
