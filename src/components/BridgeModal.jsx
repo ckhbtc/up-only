@@ -206,17 +206,19 @@ export default function BridgeModal({ onClose }) {
       style={{
         position: 'fixed', inset: 0, background: 'var(--overlay)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 200, backdropFilter: 'blur(4px)',
+        zIndex: 200, backdropFilter: 'blur(4px)', padding: 18,
+        boxSizing: 'border-box', overflowY: 'auto',
       }}
     >
       <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-        borderRadius: 20, width: '100%', maxWidth: 440,
+        background: 'var(--bg-card)', border: '3px solid var(--border)',
+        borderRadius: 18, width: '100%', maxWidth: 460,
         animation: 'slide-up 0.25s ease', overflow: 'hidden',
+        boxShadow: '8px 8px 0 var(--border)',
       }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '20px 24px', borderBottom: '1px solid var(--border)',
+          padding: '20px 24px', borderBottom: '3px solid var(--border)',
         }}>
           <div>
             <div style={{
@@ -239,11 +241,11 @@ export default function BridgeModal({ onClose }) {
           >×</button>
         </div>
 
-        <div style={{ padding: '20px 24px' }}>
+        <div style={{ padding: '22px 24px 24px' }}>
           {/* From: chain picker + amount */}
           <div style={{
-            background: 'var(--bg-primary)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '12px 14px', marginBottom: 8,
+            background: 'var(--bg-primary)', border: '2px solid var(--border)',
+            borderRadius: 12, padding: '14px 16px', marginBottom: 0,
           }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -376,12 +378,33 @@ export default function BridgeModal({ onClose }) {
             }}>USDC</div>
           </div>
 
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 18, margin: '2px 0' }}>↓</div>
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+            <div
+              aria-hidden="true"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: 'var(--accent-dim)',
+                border: '2px solid var(--border)',
+                boxShadow: '3px 3px 0 var(--border)',
+                color: 'var(--accent)',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 18,
+                fontWeight: 900,
+                fontFamily: 'var(--font-heading)',
+                lineHeight: 1,
+              }}
+            >
+              ↓
+            </div>
+          </div>
 
           {/* To: INJECTIVE (fixed) */}
           <div style={{
-            background: 'var(--bg-primary)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '12px 14px', marginBottom: 16,
+            background: 'var(--bg-primary)', border: '2px solid var(--border)',
+            borderRadius: 12, padding: '14px 16px', marginBottom: 16,
           }}>
             <div style={{
               fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
@@ -420,7 +443,7 @@ export default function BridgeModal({ onClose }) {
                   style={{
                     flex: 1,
                     background: active ? 'var(--accent-dim)' : 'var(--bg-primary)',
-                    border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                    border: `2px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                     borderRadius: 10, padding: '10px 12px',
                     textAlign: 'left',
                     cursor: disabled ? 'not-allowed' : 'pointer',
@@ -505,9 +528,29 @@ export default function BridgeModal({ onClose }) {
                     ? 'not-allowed' : 'pointer',
                   fontFamily: 'var(--font-heading)',
                   opacity: !isPositiveTokenAmount(amount) ? 0.5 : 1,
+                  boxShadow: '4px 4px 0 var(--border)',
                 }}
               >
-                {bridging ? 'Bridging…' : `Bridge from ${sourceNetworkLabel} →`}
+                {bridging ? 'Bridging…' : (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}>
+                    <span>Bridge from {sourceNetworkLabel}</span>
+                    <span style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: 'var(--on-accent)',
+                      color: 'var(--accent)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      lineHeight: 1,
+                    }}>→</span>
+                  </span>
+                )}
               </button>
             ) : (
               <button
@@ -523,14 +566,6 @@ export default function BridgeModal({ onClose }) {
             )}
           </div>
 
-          <div style={{
-            fontSize: 11, color: 'var(--text-muted)', textAlign: 'center',
-            marginTop: 12, lineHeight: 1.5,
-          }}>
-            Circle CCTP V2 - burn USDC on the source chain, mint native USDC on{' '}
-            {injectiveNetworkLabel}. Mint gas is on us; you'll only need gas for the burn on
-            the source chain.
-          </div>
         </div>
       </div>
     </div>

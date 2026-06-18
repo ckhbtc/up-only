@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import CoinLogo from './CoinLogo';
 import { formatPrice, formatUsdcBalance, liquidationPrice } from '../data/mockData';
+import { formatSpendableAmountInput, sanitizeAmountInput } from '../services/amountInput';
 import { RFQ_OPEN_SLIPPAGE } from '../services/leverageLimits';
 import { RFQ_PREQUOTE_INTERVAL_MS } from '../services/rfqConstants';
 import { buildRfqOrderInput, sendRfqPrequoteRequest } from '../services/rfq';
@@ -11,21 +12,6 @@ import {
   UP_ONLY_TARGET_MODE,
   maxLongConfigForMarket,
 } from '../services/upOnly';
-
-function sanitizeAmount(raw) {
-  const cleaned = raw.replace(/[^0-9.]/g, '');
-  const [whole, ...fractionParts] = cleaned.split('.');
-  const normalizedWhole = whole.replace(/^0+(?=\d)/, '') || '';
-  if (fractionParts.length === 0) return normalizedWhole;
-  return `${normalizedWhole || '0'}.${fractionParts.join('').slice(0, 2)}`;
-}
-
-function formatAmountInput(value) {
-  const n = Number(value || 0);
-  if (!Number.isFinite(n) || n <= 0) return '0';
-  if (n >= 100) return String(Math.floor(n));
-  return n.toFixed(2).replace(/\.?0+$/, '');
-}
 
 export default function MarketCard({
   cardRef = null,
@@ -82,9 +68,9 @@ export default function MarketCard({
     return 'UPONLY >';
   })();
 
-  const handleAmount = (raw) => setStake(sanitizeAmount(raw));
-  const handleHalf = () => setStake(formatAmountInput(balanceNum / 2));
-  const handleAll = () => setStake(formatAmountInput(balanceNum));
+  const handleAmount = (raw) => setStake(sanitizeAmountInput(raw));
+  const handleHalf = () => setStake(formatSpendableAmountInput(balanceNum / 2));
+  const handleAll = () => setStake(formatSpendableAmountInput(balanceNum));
 
   const handleSubmit = () => {
     if (!connected) {

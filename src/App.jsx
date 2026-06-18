@@ -231,7 +231,9 @@ export default function App() {
 
     session.grant({ injAddress, ethAddress })
       .then(() => {
-        setTxStatus({ type: 'success', message: 'Wallet authorized.' });
+        setTxStatus({ type: 'success', message: 'Wallet authorized' });
+        setConfetti(true);
+        setTimeout(() => setConfetti(false), 3500);
         clearTxStatusSoon();
       })
       .catch((err) => {
