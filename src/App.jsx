@@ -22,6 +22,7 @@ import {
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
 import { marketsMatchingSearch } from './services/marketSearch';
+import { sortMarketsForUpOnly } from './services/marketSort';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
@@ -141,9 +142,7 @@ export default function App() {
   const { markets, positions, loading, startPolling, stopPolling } = useMarketStore();
   const session = useSessionStore();
   const visiblePositions = useMemo(() => positions.filter(isUpOnlyPosition), [positions]);
-  const sortedMarkets = useMemo(() => (
-    [...markets].sort((a, b) => Math.abs(b.change24h || 0) - Math.abs(a.change24h || 0))
-  ), [markets]);
+  const sortedMarkets = useMemo(() => sortMarketsForUpOnly(markets), [markets]);
   const searchMatches = useMemo(() => (
     marketsMatchingSearch(sortedMarkets, searchQuery)
   ), [sortedMarkets, searchQuery]);
