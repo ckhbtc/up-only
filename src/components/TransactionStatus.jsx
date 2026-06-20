@@ -15,8 +15,8 @@ function phaseLabels(message) {
 
 function ribbonDuration(message) {
   const lower = String(message || '').toLowerCase();
-  if (lower.includes('take profit') || lower.includes('wallet')) return '12s';
-  return '5.5s';
+  if (lower.includes('take profit') || lower.includes('wallet')) return '6s';
+  return '2.75s';
 }
 
 function StatusTxLink({ txHash }) {

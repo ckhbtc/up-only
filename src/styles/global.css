@@ -1047,7 +1047,7 @@ input:focus-visible {
 }
 
 .tx-loading-track {
-  animation: tx-ribbon-scroll var(--tx-ribbon-duration, 5.5s) linear infinite;
+  animation: tx-ribbon-scroll var(--tx-ribbon-duration, 2.75s) linear infinite;
   display: flex;
   width: max-content;
   will-change: transform;
