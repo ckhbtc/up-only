@@ -39,5 +39,10 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.1.0"
+  },
+  "overrides": {
+    "viem": {
+      "ws": "8.21.0"
+    }
   }
 }

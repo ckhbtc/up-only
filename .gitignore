@@ -1,8 +1,27 @@
-node_modules
-dist
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+sessions.json
+
+# Local-only agent and deployment notes
 CLAUDE.md
 DEPLOYMENT.md
+
+# Logs, OS files, and editor state
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 .DS_Store
-.env
-.env.local
-sessions.json
+.idea/
+.vscode/

@@ -6,7 +6,8 @@ Long-only max-leverage trading UI on Injective mainnet.
 
 Users connect MetaMask or Rabby, sign one AuthZ grant, then open a max-leverage
 long on a selected perpetual market. The app intentionally removes short entry,
-leverage selection, target-win input, and the confirmation sheet from BET.
+leverage selection, target-win input, and the confirmation sheet from the base
+RFQ trading flow.
 
 ## Product Rules
 
@@ -69,7 +70,7 @@ The Vite config proxies `/api/*` to `localhost:36001`.
 - Single quotes and 2-space indent.
 - Use ESLint/Prettier conventions where available.
 - Keep `CLAUDE.md` and `DEPLOYMENT.md` out of git.
-- Do not refactor copied BET plumbing unless the product rule requires it.
+- Do not refactor copied RFQ plumbing unless the product rule requires it.
 - Keep RFQ, AuthZ, fee delegation, bridge, faucet, and autosign behavior intact.
 
 ## Deployment

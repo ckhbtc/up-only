@@ -14,6 +14,13 @@ router.use(express.json({ limit: '64kb' }));
 
 const INIT_ACCOUNT_UNAVAILABLE = 'New wallet setup is temporarily unavailable. Please try again.';
 
+export function healthResponse() {
+  return {
+    ok: true,
+    service: 'up-only',
+  };
+}
+
 export function initAccountFailureResponse(err) {
   const message = err?.message || '';
   const lower = message.toLowerCase();
@@ -29,6 +36,10 @@ export function initAccountFailureResponse(err) {
     body: { error: 'New wallet setup failed. Please try again.' },
   };
 }
+
+router.get('/health', (_req, res) => {
+  res.json(healthResponse());
+});
 
 router.post('/init-account', async (req, res) => {
   try {

@@ -4,9 +4,8 @@
 
 UpOnly is a long-only, max-leverage Injective perpetual trading app. The user
 connects a wallet, authorizes autosign once, types a USDC amount on a market
-card, and clicks the inline UpOnly CTA. The app keeps BET's RFQ execution,
-AuthZ autosign, fee delegation, bridge, faucet, wallet, and position close
-plumbing.
+card, and clicks the inline UpOnly CTA. The app keeps the RFQ execution, AuthZ
+autosign, fee delegation, bridge, faucet, wallet, and position close plumbing.
 
 ## Creative Direction
 

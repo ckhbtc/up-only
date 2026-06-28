@@ -1,8 +1,12 @@
 # UpOnly
 
-Long-only max-leverage trading UI on Injective. Users connect a wallet, authorize
-autosign once, pick an asset, enter an amount, and open a max-leverage long via
-the existing BET RFQ execution path.
+Long-only max-leverage trading UI on Injective. Users connect a wallet,
+authorize autosign once, pick an asset, enter an amount, and open a
+max-leverage long through RFQ execution.
+
+This app targets Injective mainnet and can place real max-leverage trades. Use
+small size, understand the liquidation risk, and never configure operational
+keys with more funds than the app needs.
 
 ## Product Scope
 
@@ -12,7 +16,7 @@ the existing BET RFQ execution path.
 - YOLO-style entry. No take-profit target or confirmation sheet in the default
   flow.
 - RFQ execution, AuthZ grants, autosign, fee delegation, bridge, faucet, and
-  position close paths are inherited from BET.
+  position close paths are part of the app flow.
 
 ## Run Locally
 
@@ -38,15 +42,25 @@ npm start
 | Variable | Required | What it does |
 |---|---|---|
 | `FAUCET_PRIVATE_KEY` | Optional | Hex EVM private key for a small INJ faucet used by fresh wallets before their first AuthZ grant. |
+| `RFQ_BROADCAST_RPC_URLS` | Optional | Comma-separated Tendermint RPC URLs for the RFQ broadcast relay. |
+| `RFQ_BROADCAST_LCD_URLS` | Optional | Comma-separated LCD base URLs for the RFQ broadcast relay. |
 | `PORT` | Optional | Production listen port for `server.js`. Defaults to `36000`. |
 | `API_PORT` | Optional | Dev-only API port for `dev-server.js`. Defaults to `36001`. |
+
+Use a limited-balance operational wallet for `FAUCET_PRIVATE_KEY`. The same key
+backs the fresh-wallet faucet and CCTP mint relayer, so it should never be a
+primary wallet.
 
 ## Architecture
 
 The browser generates an ephemeral grantee key, stores it in localStorage keyed
 by the connected `inj1` granter, and asks the user to sign AuthZ grants once.
 After that, opens and closes are signed locally as `MsgAuthzExec` and broadcast
-through Injective fee delegation. The server does not hold trading keys.
+through Injective fee delegation.
+
+The server does not hold user trading keys. Its public API surface is limited to
+fresh-wallet initialization, CCTP mint relay, RFQ broadcast relay, RFQ timing,
+and `/api/health`.
 
 Open orders route through RFQ first. UpOnly forces `side: 'long'` and uses the
 market's max stepped leverage from `src/services/upOnly.js`. Position close
@@ -86,4 +100,5 @@ adds a `DEV` pill and exposes "Cash Out All" for local testing.
 ## Deployment
 
 Deployment details belong in local-only `DEPLOYMENT.md`, which is gitignored.
-Production is served at `https://uponly.inj.so/`.
+Do not commit hostnames, server IPs, SSH key paths, PM2 names, or production
+environment values.
