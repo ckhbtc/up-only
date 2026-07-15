@@ -16,8 +16,6 @@ import {
   buildRfqGatewayPrepareRequest,
   buildRfqQuoteResult,
   buildRfqOrderInput,
-  executeRfqGatewayAutoSign,
-  fetchFreshRfqAccountDetailsForPrepare,
   getRfqQuoteRejectReason,
   getPreparedQuoteExpiryReport,
   getPreparedTxSignatureIndexes,
@@ -112,36 +110,6 @@ function preparedTxWithQuotes(quotes) {
     signatures: [],
   });
   return CosmosTxV1Beta1TxPb.TxRaw.toBinary(txRaw);
-}
-
-function preparedAutoSignTx({ autosignKey, sequence }) {
-  const feePayerPubKey = new Uint8Array([10, 3, 1, 2, 3]);
-  const txRaw = CosmosTxV1Beta1TxPb.TxRaw.fromBinary(preparedTxWithQuotes([quote()]));
-  const authInfo = CosmosTxV1Beta1TxPb.AuthInfo.create({
-    signerInfos: [
-      {
-        publicKey: autosignKey.toPublicKey().toAny(),
-        sequence: BigInt(sequence),
-      },
-      {
-        publicKey: {
-          typeUrl: '/injective.crypto.v1beta1.ethsecp256k1.PubKey',
-          value: feePayerPubKey,
-        },
-        sequence: 1n,
-      },
-    ],
-  });
-  txRaw.authInfoBytes = CosmosTxV1Beta1TxPb.AuthInfo.toBinary(authInfo);
-
-  return {
-    tx: CosmosTxV1Beta1TxPb.TxRaw.toBinary(txRaw),
-    feePayerSig: '0x' + 'ab'.repeat(64),
-    feePayerPubKey: { key: uint8ArrayToBase64(feePayerPubKey) },
-    autosignAccountNumber: 12,
-    quotes: [quote()],
-    rfqId: 12,
-  };
 }
 
 test('buildRfqOrderInput formats human RFQ decimals from market ticks', () => {
@@ -509,82 +477,6 @@ test('getPreparedQuoteExpiryReport accepts prepared RFQ quotes with standard mak
   assert.doesNotThrow(
     () => assertPreparedQuoteFreshness(prepared, { nowMs, minTtlMs: RFQ_MIN_QUOTE_TTL_MS })
   );
-});
-
-test('fetchFreshRfqAccountDetailsForPrepare does not reuse a stale account sequence', async () => {
-  let fetches = 0;
-  const fetchAccountDetails = async () => {
-    fetches += 1;
-    return {
-      baseAccount: {
-        accountNumber: 12,
-        sequence: fetches,
-      },
-    };
-  };
-
-  const first = await fetchFreshRfqAccountDetailsForPrepare('inj1freshsequence', fetchAccountDetails);
-  const second = await fetchFreshRfqAccountDetailsForPrepare('inj1freshsequence', fetchAccountDetails);
-
-  assert.equal(first.source, 'network');
-  assert.equal(first.accountDetails.baseAccount.sequence, 1);
-  assert.equal(second.source, 'network');
-  assert.equal(second.accountDetails.baseAccount.sequence, 2);
-  assert.equal(fetches, 2);
-});
-
-test('executeRfqGatewayAutoSign rebuilds once with a fresh sequence after a sequence mismatch', async () => {
-  const autosignKey = PrivateKey.fromHex('0x' + '09'.repeat(32));
-  const accountSequences = [6804, 6805];
-  const gatewaySequences = [];
-  let accountFetches = 0;
-  let broadcasts = 0;
-
-  const result = await executeRfqGatewayAutoSign({
-    session: {
-      privateKeyHex: autosignKey.toPrivateKeyHex(),
-      granterAddress: 'inj1granter',
-      granteeAddress: autosignKey.toBech32(),
-    },
-    marketId: market.marketId,
-    input: {
-      direction: 'long',
-      margin: '50',
-      quantity: '5',
-      worstPrice: '101',
-    },
-    accountDetailsFetcher: async () => ({
-      baseAccount: {
-        accountNumber: 12,
-        sequence: accountSequences[accountFetches++],
-      },
-    }),
-    gatewayApi: {
-      fetchPrepareAutoSign: async (request) => {
-        gatewaySequences.push(request.autosignAccountSequence);
-        return preparedAutoSignTx({
-          autosignKey,
-          sequence: request.autosignAccountSequence,
-        });
-      },
-    },
-    txApiClient: {
-      broadcast: async () => {
-        broadcasts += 1;
-        if (broadcasts === 1) {
-          throw new Error('account sequence mismatch, expected 6805, got 6804: incorrect account sequence');
-        }
-        return { txHash: 'retried-tx-hash' };
-      },
-      fetchTxPoll: async () => ({ txHash: 'retried-tx-hash' }),
-    },
-    relayBroadcast: null,
-  });
-
-  assert.equal(result.txHash, 'retried-tx-hash');
-  assert.equal(accountFetches, 2);
-  assert.deepEqual(gatewaySequences, [6804, 6805]);
-  assert.equal(broadcasts, 2);
 });
 
 test('broadcastSignedRfqTxRaw submits through the fastest path, then waits for confirmation', async () => {

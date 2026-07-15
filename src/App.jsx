@@ -15,6 +15,7 @@ import Confetti from './components/Confetti';
 import TransactionStatus from './components/TransactionStatus';
 import {
   buildRfqCloseInput,
+  primeRfqAccountCache,
   sendRfqPrequoteRequest,
   tradeCloseRfq,
   tradeOpenRfq,
@@ -257,6 +258,13 @@ export default function App() {
   useEffect(() => {
     useSessionStore.getState().refresh(injAddress);
   }, [injAddress]);
+
+  useEffect(() => {
+    if (!connected || !injAddress || !session.rfqReady) return;
+    primeRfqAccountCache(injAddress).catch((err) => {
+      console.warn('RFQ account cache warmup failed:', err.message || err);
+    });
+  }, [connected, injAddress, session.rfqReady]);
 
   useEffect(() => {
     if (!connected || !injAddress || !session.rfqReady || view !== 'bets' || !visiblePositions.length) return;

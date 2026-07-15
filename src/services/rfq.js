@@ -49,7 +49,6 @@ import {
   assertOpenMarginAllowed,
   initialMarginCheckPrice,
 } from './leverageLimits.js';
-import { isAccountSequenceMismatch } from './tradeResult.js';
 
 const GRPC_HEADER_SIZE = 5;
 const GRPC_COMPRESSION_NONE = 0;
@@ -57,11 +56,13 @@ const GRPC_COMPRESSION_TRAILER = 128;
 const MAX_QUOTES_PER_ACCEPT = 8;
 const NETWORK = Network.MainnetSentry;
 const RFQ_TIMING_PREFIX = '[RFQ-TIMING]';
+const RFQ_ACCOUNT_DETAILS_TTL_MS = 5 * 60_000;
 const endpoints = getNetworkEndpoints(NETWORK);
 const authApi = new ChainGrpcAuthApi(endpoints.grpc);
 const txApi = new TxGrpcApi(endpoints.grpc);
 const rfqGatewayApi = new IndexerGrpcRfqGwApi(RFQ_GATEWAY_URL);
 const textDecoder = new TextDecoder();
+const rfqAccountDetailsCache = new Map();
 let rfqPrequoteSocket = null;
 let rfqPrequoteAddress = null;
 let rfqPrequoteConnectPromise = null;
@@ -308,14 +309,77 @@ async function fetchAccountDetailsNoThrow(address) {
   }
 }
 
-// A prepared RFQ settlement transaction embeds this exact account sequence.
-// Always read it immediately before preparation: another tab or AuthZ action
-// may have advanced the grantee account since the previous trade.
-export async function fetchFreshRfqAccountDetailsForPrepare(
-  address,
-  fetchAccountDetails = fetchAccountDetailsNoThrow
-) {
-  const accountDetails = await fetchAccountDetails(address);
+function accountCacheKey(address) {
+  return String(address || '').toLowerCase();
+}
+
+function cloneAccountDetails(accountDetails) {
+  if (!accountDetails) return null;
+  return {
+    ...accountDetails,
+    baseAccount: accountDetails.baseAccount
+      ? { ...accountDetails.baseAccount }
+      : accountDetails.baseAccount,
+  };
+}
+
+function rememberRfqAccountDetails(address, accountDetails) {
+  const key = accountCacheKey(address);
+  const account = accountDetails?.baseAccount;
+  if (!key || !account) return;
+  rfqAccountDetailsCache.set(key, {
+    accountDetails: cloneAccountDetails(accountDetails),
+    ts: Date.now(),
+  });
+}
+
+function readCachedRfqAccountDetails(address) {
+  const key = accountCacheKey(address);
+  if (!key) return null;
+  const cached = rfqAccountDetailsCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.ts > RFQ_ACCOUNT_DETAILS_TTL_MS) {
+    rfqAccountDetailsCache.delete(key);
+    return null;
+  }
+  return cloneAccountDetails(cached.accountDetails);
+}
+
+function advanceCachedRfqAccountSequence(address) {
+  const key = accountCacheKey(address);
+  const cached = key ? rfqAccountDetailsCache.get(key) : null;
+  const baseAccount = cached?.accountDetails?.baseAccount;
+  const sequence = optionalNumber(baseAccount?.sequence);
+  if (!baseAccount || sequence === undefined) return null;
+  baseAccount.sequence = sequence + 1;
+  cached.ts = Date.now();
+  return baseAccount.sequence;
+}
+
+export function invalidateRfqAccountCache(address = null) {
+  if (!address) {
+    rfqAccountDetailsCache.clear();
+    return;
+  }
+  rfqAccountDetailsCache.delete(accountCacheKey(address));
+}
+
+export async function primeRfqAccountCache(granterAddress) {
+  const session = requireSession(granterAddress);
+  const privateKey = PrivateKey.fromHex(session.privateKeyHex);
+  const address = privateKey.toBech32();
+  const cached = readCachedRfqAccountDetails(address);
+  if (cached) return { accountDetails: cached, source: 'cache' };
+  const accountDetails = await fetchAccountDetailsNoThrow(address);
+  rememberRfqAccountDetails(address, accountDetails);
+  return { accountDetails, source: 'network' };
+}
+
+async function getRfqAccountDetailsForPrepare(address) {
+  const cached = readCachedRfqAccountDetails(address);
+  if (cached) return { accountDetails: cached, source: 'cache' };
+  const accountDetails = await fetchAccountDetailsNoThrow(address);
+  rememberRfqAccountDetails(address, accountDetails);
   return { accountDetails, source: 'network' };
 }
 
@@ -1440,9 +1504,6 @@ export async function executeRfqGatewayAutoSign({
   minQuoteTtlMs = RFQ_MIN_QUOTE_TTL_MS,
   maxPrepareAttempts = RFQ_PREPARE_MAX_ATTEMPTS,
   timing = null,
-  accountDetailsFetcher = fetchAccountDetailsNoThrow,
-  sequenceRetryCount = 0,
-  maxAccountSequenceRetries = 1,
 }) {
   const activeTiming = timing || createRfqTiming('rfq-execute', {
     marketId,
@@ -1456,10 +1517,7 @@ export async function executeRfqGatewayAutoSign({
     markRfqTiming(activeTiming, 'account.fetch.start', {
       autosignAddress,
     });
-    const accountLookup = await fetchFreshRfqAccountDetailsForPrepare(
-      autosignAddress,
-      accountDetailsFetcher
-    );
+    const accountLookup = await getRfqAccountDetailsForPrepare(autosignAddress);
     const accountDetails = accountLookup.accountDetails;
     markRfqTiming(activeTiming, 'account.fetch.end', {
       source: accountLookup.source,
@@ -1538,6 +1596,12 @@ export async function executeRfqGatewayAutoSign({
       txHash: result.txHash,
       broadcastPath: result.broadcastPath ?? null,
     });
+    const nextSequence = advanceCachedRfqAccountSequence(autosignAddress);
+    if (nextSequence !== null) {
+      markRfqTiming(activeTiming, 'account.cache.advance', {
+        sequence: nextSequence,
+      });
+    }
     onProgress?.({ phase: 'confirmed', prepared, result });
 
     if (ownsTiming) {
@@ -1553,44 +1617,13 @@ export async function executeRfqGatewayAutoSign({
       prepared,
     };
   } catch (err) {
-    if (isAccountSequenceMismatch(err.message) && sequenceRetryCount < maxAccountSequenceRetries) {
-      const nextAttempt = sequenceRetryCount + 1;
-      markRfqTiming(activeTiming, 'account.sequence_retry', {
-        attempt: nextAttempt,
-        message: err.message,
-      });
-      try {
-        const result = await executeRfqGatewayAutoSign({
-          session,
-          marketId,
-          input,
-          onProgress,
-          gatewayApi,
-          txApiClient,
-          relayBroadcast,
-          minQuoteTtlMs,
-          maxPrepareAttempts,
-          timing: activeTiming,
-          accountDetailsFetcher,
-          sequenceRetryCount: nextAttempt,
-          maxAccountSequenceRetries,
-        });
-        if (ownsTiming) {
-          flushRfqTiming(activeTiming, 'success', {
-            txHash: result.txHash,
-            prepared: compactPrepared(result.prepared),
-            broadcastPath: result.broadcastPath ?? null,
-          });
-        }
-        return result;
-      } catch (retryErr) {
-        if (ownsTiming) {
-          flushRfqTiming(activeTiming, 'error', { message: retryErr.message });
-        }
-        throw retryErr;
-      }
-    }
     markRfqTiming(activeTiming, 'error', { message: err.message });
+    try {
+      const privateKey = PrivateKey.fromHex(session.privateKeyHex);
+      invalidateRfqAccountCache(privateKey.toBech32());
+    } catch {
+      // best effort only
+    }
     if (ownsTiming) {
       flushRfqTiming(activeTiming, 'error', { message: err.message });
     }
@@ -1843,6 +1876,15 @@ export async function tradeCloseRfq({
       const cleanupStarted = timingNow();
       markRfqTiming(timing, 'cleanup.reduce_only.start');
       const cleanupResult = await cleanupReduceOnlyOrdersForMarket({ session, market });
+      if (Number(cleanupResult?.cancelled || 0) > 0) {
+        const nextSequence = advanceCachedRfqAccountSequence(session.granteeAddress);
+        if (nextSequence !== null) {
+          markRfqTiming(timing, 'account.cache.advance', {
+            source: 'reduce_only_cleanup',
+            sequence: nextSequence,
+          });
+        }
+      }
       markRfqTiming(timing, 'cleanup.reduce_only.end', {
         cleanupMs: roundMs(timingNow() - cleanupStarted),
         cancelled: cleanupResult?.cancelled ?? 0,
@@ -1855,6 +1897,15 @@ export async function tradeCloseRfq({
       const cleanupStarted = timingNow();
       markRfqTiming(timing, 'cleanup.conditional.start');
       const cleanupResult = await cancelActiveConditionalOrdersForMarket({ session, marketId: market.marketId });
+      if (cleanupResult?.txHash) {
+        const nextSequence = advanceCachedRfqAccountSequence(session.granteeAddress);
+        if (nextSequence !== null) {
+          markRfqTiming(timing, 'account.cache.advance', {
+            source: 'conditional_cleanup',
+            sequence: nextSequence,
+          });
+        }
+      }
       markRfqTiming(timing, 'cleanup.conditional.end', {
         cleanupMs: roundMs(timingNow() - cleanupStarted),
         skipped: Boolean(cleanupResult?.skipped),
