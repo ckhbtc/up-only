@@ -77,3 +77,10 @@ test('userFacingTradeError hides account-sequence mismatch internals', () => {
     'Order unsuccessful, please try again.'
   );
 });
+
+test('userFacingTradeError hides RFQ gateway allocation timeouts', () => {
+  assert.equal(
+    userFacingTradeError('failed to create request: failed to allocate RFQ ID: connection(indexer-rfq-mongodb:27017) incomplete read of message header: context deadline exceeded: i/o timeout'),
+    'Order unsuccessful, please try again.'
+  );
+});

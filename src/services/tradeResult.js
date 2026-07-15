@@ -11,6 +11,9 @@ export function userFacingTradeError(message) {
   if (/account sequence mismatch|incorrect account sequence/i.test(text)) {
     return 'Order unsuccessful, please try again.';
   }
+  if (/failed to allocate RFQ ID|indexer-rfq-mongodb|context deadline exceeded/i.test(text)) {
+    return 'Order unsuccessful, please try again.';
+  }
   return text;
 }
 
