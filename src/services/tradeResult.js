@@ -8,6 +8,9 @@ export function userFacingTradeError(message) {
   if (/no quotes received within wait time/i.test(text)) {
     return 'Order failed, please try again.';
   }
+  if (/account sequence mismatch|incorrect account sequence/i.test(text)) {
+    return 'Order unsuccessful, please try again.';
+  }
   return text;
 }
 

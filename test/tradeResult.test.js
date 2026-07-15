@@ -70,3 +70,10 @@ test('userFacingTradeError hides RFQ no-quote timeout internals', () => {
     'Order failed, please try again.'
   );
 });
+
+test('userFacingTradeError hides account-sequence mismatch internals', () => {
+  assert.equal(
+    userFacingTradeError('broadcast error on transaction validation: account sequence mismatch, expected 6805, got 6804: incorrect account sequence'),
+    'Order unsuccessful, please try again.'
+  );
+});
