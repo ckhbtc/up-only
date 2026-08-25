@@ -189,6 +189,7 @@ export default function MarketCard({
             id={`stake-${market.marketId}`}
             type="text"
             inputMode="decimal"
+            autoComplete="off"
             value={stake}
             onChange={event => handleAmount(event.target.value)}
             placeholder="0"
