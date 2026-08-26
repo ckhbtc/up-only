@@ -291,6 +291,21 @@ export function normalizePositionQuantityForClose(quantity) {
   return decimal.isFinite() ? decimal.toFixed() : '0';
 }
 
+export async function fetchPositionMarkPrices(injAddress) {
+  const posRes = await derivativesApi.fetchPositionsV2({ address: injAddress });
+  const scale = new Decimal(10).pow(QUOTE_DECIMALS);
+  const markPrices = {};
+
+  for (const position of posRes.positions || []) {
+    const markPrice = new Decimal(position.markPrice || position.entryPrice || 0).div(scale);
+    if (markPrice.isFinite() && markPrice.gt(0)) {
+      markPrices[position.marketId] = markPrice.toNumber();
+    }
+  }
+
+  return markPrices;
+}
+
 export async function fetchPositions(injAddress) {
   const markets = await listMarkets();
   const marketMap = new Map(markets.map(m => [m.marketId, m]));

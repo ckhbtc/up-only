@@ -3,9 +3,15 @@ import {
   listMarkets,
   fetchAllPrices,
   fetchPositions,
+  fetchPositionMarkPrices,
   fetchMarketsSummary,
   fetchVerifiedDerivativeMarkets,
 } from '../services/injective';
+import {
+  LIVE_POSITION_POLL_MS,
+  applyPositionMarkPrices,
+  positionPollingActions,
+} from '../services/livePositionPrices';
 import {
   applyOptimisticCloses,
   mergeFetchedAndOptimisticPositions,
@@ -275,6 +281,18 @@ const useMarketStore = create((set, get) => ({
     }
   },
 
+  updatePositionMarks: async (injAddress) => {
+    if (!injAddress || get().positions.length === 0) return;
+    try {
+      const markPrices = await fetchPositionMarkPrices(injAddress);
+      set(state => ({
+        positions: applyPositionMarkPrices(state.positions, markPrices),
+      }));
+    } catch (err) {
+      console.error('Position mark price update failed:', err);
+    }
+  },
+
   startPolling: (injAddress) => {
     const { pollInterval } = get();
     if (pollInterval) return; // Already polling
@@ -283,10 +301,17 @@ const useMarketStore = create((set, get) => ({
     get().fetchMarkets();
     if (injAddress) get().fetchPositions(injAddress);
 
+    let tick = 0;
     const interval = setInterval(() => {
-      get().updatePrices();
-      if (injAddress) get().fetchPositions(injAddress);
-    }, 10_000);
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+
+      tick += 1;
+      const actions = positionPollingActions(tick);
+      if (actions.refreshMarkets) get().updatePrices();
+      if (!injAddress) return;
+      if (actions.refreshPositions) get().fetchPositions(injAddress);
+      else if (actions.refreshMarks) get().updatePositionMarks(injAddress);
+    }, LIVE_POSITION_POLL_MS);
 
     set({ pollInterval: interval });
   },
