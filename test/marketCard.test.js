@@ -37,3 +37,20 @@ test('cash entry does not offer previously entered values', () => {
 
   assert.match(markup, /<input[^>]+autocomplete="off"/i);
 });
+
+test('market card omits cash-down and position-size labels', () => {
+  const markup = renderToStaticMarkup(createElement(MarketCard, {
+    market: {
+      marketId: '0xbtc',
+      symbol: 'BTC',
+      price: 100_000,
+      priceDecimals: 2,
+      maintenanceMarginRatio: 0.025,
+      initialMarginRatio: 0.1,
+    },
+    balance: 10,
+  }));
+
+  assert.doesNotMatch(markup, /Cash down|Position size|up-position-strip/i);
+  assert.match(markup, /aria-label="BTC UpOnly amount"/);
+});

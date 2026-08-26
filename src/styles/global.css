@@ -987,25 +987,6 @@ input:focus-visible {
   gap: 8px;
 }
 
-.up-amount-row label {
-  align-items: center;
-  color: var(--text-primary);
-  display: flex;
-  font-family: var(--font-heading);
-  font-size: 21px;
-  justify-content: space-between;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.up-amount-row label span {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: none;
-}
-
 .up-amount-control {
   align-items: center;
   background: var(--paper);
@@ -1065,31 +1046,6 @@ input:focus-visible {
   background: var(--bg-card-hover);
   color: var(--text-muted);
   text-shadow: none;
-}
-
-.up-position-strip {
-  align-items: center;
-  background: var(--accent-light);
-  border: 3px dashed var(--border);
-  border-radius: 6px;
-  color: var(--border);
-  display: flex;
-  justify-content: space-between;
-  min-height: 44px;
-  padding: 8px 10px;
-}
-
-.up-position-strip span {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.up-position-strip strong {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  line-height: 1;
 }
 
 .up-error-stamp {
@@ -2381,12 +2337,6 @@ input:focus-visible {
 
   .up-liq-price {
     font-size: 24px;
-  }
-
-  .up-amount-row label {
-    align-items: start;
-    flex-direction: column;
-    gap: 5px;
   }
 
   .up-cta {

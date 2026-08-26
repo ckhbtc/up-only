@@ -37,7 +37,6 @@ export default function MarketCard({
   const stakeNum = Number(stake) || 0;
   const maxConfig = useMemo(() => maxLongConfigForMarket(market), [market]);
   const leverage = maxConfig.leverage;
-  const positionSize = stakeNum * leverage;
   const insufficient = connected && stakeNum > balanceNum;
   const emptyStake = stakeNum < 1;
   const liqPrice = useMemo(() => liquidationPrice({
@@ -177,10 +176,6 @@ export default function MarketCard({
       </div>
 
       <div className="up-amount-row">
-        <label htmlFor={`stake-${market.marketId}`}>
-          Cash down
-          <span>${formatUsdcBalance(balanceNum)} ready</span>
-        </label>
         <div className="up-amount-control">
           <span>$</span>
           <input
@@ -203,11 +198,6 @@ export default function MarketCard({
             ALL-IN
           </button>
         </div>
-      </div>
-
-      <div className="up-position-strip">
-        <span>Position size</span>
-        <strong>${formatPrice(positionSize)}</strong>
       </div>
 
       {insufficient && (
