@@ -20,3 +20,10 @@ export function marketsMatchingSearch(markets, query) {
   if (!needle) return [];
   return markets.filter(market => marketMatchesSearch(market, needle));
 }
+
+export function moveSearchCursor(currentIndex, direction, itemCount) {
+  if (!itemCount || itemCount < 1) return 0;
+  const current = Math.min(Math.max(0, Number(currentIndex) || 0), itemCount - 1);
+  const step = direction < 0 ? -1 : 1;
+  return (current + step + itemCount) % itemCount;
+}

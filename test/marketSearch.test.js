@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { marketMatchesSearch, marketsMatchingSearch } from '../src/services/marketSearch.js';
+import {
+  marketMatchesSearch,
+  marketsMatchingSearch,
+  moveSearchCursor,
+} from '../src/services/marketSearch.js';
 
 const markets = [
   {
@@ -32,4 +36,11 @@ test('marketsMatchingSearch returns no highlighted matches for a blank query', (
 
 test('marketsMatchingSearch finds matches by the normalized query without changing order', () => {
   assert.deepEqual(marketsMatchingSearch(markets, ' INJECT '), [markets[1]]);
+});
+
+test('moveSearchCursor wraps keyboard selection in both directions', () => {
+  assert.equal(moveSearchCursor(0, 1, 3), 1);
+  assert.equal(moveSearchCursor(2, 1, 3), 0);
+  assert.equal(moveSearchCursor(0, -1, 3), 2);
+  assert.equal(moveSearchCursor(4, 1, 0), 0);
 });

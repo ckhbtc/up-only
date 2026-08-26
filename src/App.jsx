@@ -170,6 +170,17 @@ export default function App() {
     setSearchQuery('');
   }, []);
 
+  const selectSearchResult = useCallback((market) => {
+    const marketId = market?.marketId ?? market?.id;
+    closeSearch();
+    window.requestAnimationFrame(() => {
+      marketCardRefs.current
+        .get(marketId)
+        ?.querySelector('input[inputmode="decimal"]')
+        ?.focus();
+    });
+  }, [closeSearch]);
+
   const setMarketCardRef = useCallback((marketId, node) => {
     if (marketId == null) return;
     if (node) {
@@ -572,15 +583,26 @@ export default function App() {
         onSetTheme={setThemeTo}
         searchOpen={searchOpen}
         searchQuery={searchQuery}
+        searchMatches={searchMatches}
         onOpenSearch={openSearch}
         onCloseSearch={closeSearch}
         onSearchQueryChange={setSearchQuery}
+        onSelectSearchResult={selectSearchResult}
         onAddFunds={() => setShowBridge(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
         revokingAutosign={session.revoking}
         devMode={devMode}
       />
+
+      {searchOpen && (
+        <button
+          type="button"
+          className="up-search-scrim"
+          onClick={closeSearch}
+          aria-label="Close pair search"
+        />
+      )}
 
       {/* Transaction status toast */}
       {confetti && <Confetti />}

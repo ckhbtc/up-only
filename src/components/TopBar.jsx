@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useWalletStore from '../stores/walletStore';
-import { formatUsdcBalance } from '../data/mockData';
+import { formatPrice, formatUsdcBalance } from '../data/mockData';
+import { moveSearchCursor } from '../services/marketSearch';
+import { maxLongConfigForMarket } from '../services/upOnly';
+import CoinLogo from './CoinLogo';
 
 const THEME_SEGS = [
   { id: 'bauhaus', icon: 'sun', label: 'Light' },
@@ -38,9 +41,11 @@ export default function TopBar({
   onSetTheme,
   searchOpen,
   searchQuery,
+  searchMatches = [],
   onOpenSearch,
   onCloseSearch,
   onSearchQueryChange,
+  onSelectSearchResult,
   onAddFunds,
   onRevokeAutosign,
   sessionActive,
@@ -49,6 +54,9 @@ export default function TopBar({
 }) {
   const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect } = useWalletStore();
   const searchInputRef = useRef(null);
+  const searchListRef = useRef(null);
+  const resultRefs = useRef(new Map());
+  const [cursorIndex, setCursorIndex] = useState(0);
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -57,10 +65,41 @@ export default function TopBar({
     });
   }, [searchOpen]);
 
+  useEffect(() => {
+    setCursorIndex(0);
+  }, [searchOpen, searchQuery]);
+
+  useEffect(() => {
+    const list = searchListRef.current;
+    const activeRow = resultRefs.current.get(cursorIndex);
+    if (!list || !activeRow) return;
+
+    const rowTop = activeRow.offsetTop;
+    const rowBottom = rowTop + activeRow.offsetHeight;
+    if (rowTop < list.scrollTop) list.scrollTop = rowTop;
+    if (rowBottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = rowBottom - list.clientHeight;
+    }
+  }, [cursorIndex]);
+
   const handleSearchKeyDown = (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       onCloseSearch();
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      setCursorIndex(index => moveSearchCursor(
+        index,
+        event.key === 'ArrowUp' ? -1 : 1,
+        searchMatches.length,
+      ));
+      return;
+    }
+    if (event.key === 'Enter' && searchMatches[cursorIndex]) {
+      event.preventDefault();
+      onSelectSearchResult(searchMatches[cursorIndex]);
     }
   };
 
@@ -89,28 +128,102 @@ export default function TopBar({
           >
             <SearchIcon />
             <span>Search</span>
+            {!searchOpen && <kbd className="up-search-key">/</kbd>}
           </button>
           {searchOpen && (
-            <div className="up-nav-search">
-              <SearchIcon />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={event => onSearchQueryChange(event.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Search pairs"
-                aria-label="Search pairs"
-              />
-              <button
-                type="button"
-                className="up-search-clear"
-                onClick={searchQuery ? () => onSearchQueryChange('') : onCloseSearch}
-                aria-label={searchQuery ? 'Clear search' : 'Close search'}
-              >
-                x
-              </button>
-            </div>
+            <>
+              <div className="up-nav-search">
+                <SearchIcon />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={searchQuery}
+                  onChange={event => onSearchQueryChange(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search pairs"
+                  aria-label="Search pairs"
+                  aria-controls="up-search-results"
+                  aria-activedescendant={searchMatches.length ? `up-search-result-${cursorIndex}` : undefined}
+                  autoComplete="off"
+                />
+                <span className="up-search-count">{searchMatches.length} match</span>
+                <button
+                  type="button"
+                  className="up-search-clear"
+                  onClick={searchQuery ? () => onSearchQueryChange('') : onCloseSearch}
+                  aria-label={searchQuery ? 'Clear search' : 'Close search'}
+                >
+                  x
+                </button>
+              </div>
+
+              {searchQuery.trim() && (
+                <div className="up-search-dropdown">
+                  <div className="up-search-dropdown-head">
+                    <span>{searchMatches.length} pairs match &quot;{searchQuery.trim()}&quot;</span>
+                    <span>hottest first</span>
+                  </div>
+
+                  {searchMatches.length > 0 ? (
+                    <div
+                      id="up-search-results"
+                      ref={searchListRef}
+                      className="up-search-results"
+                      role="listbox"
+                      aria-label="Matching pairs"
+                    >
+                      {searchMatches.map((market, index) => {
+                        const marketId = market.marketId ?? market.id;
+                        const maxConfig = maxLongConfigForMarket(market);
+                        const change = Number(market.change24h || 0);
+                        return (
+                          <button
+                            key={marketId}
+                            id={`up-search-result-${index}`}
+                            ref={node => {
+                              if (node) resultRefs.current.set(index, node);
+                              else resultRefs.current.delete(index);
+                            }}
+                            type="button"
+                            role="option"
+                            aria-selected={cursorIndex === index}
+                            className={`up-search-result ${cursorIndex === index ? 'is-active' : ''}`}
+                            onMouseEnter={() => setCursorIndex(index)}
+                            onClick={() => onSelectSearchResult(market)}
+                          >
+                            <CoinLogo symbol={market.symbol} logoUrl={market.logo} size={32} />
+                            <span className="up-search-result-name">
+                              <strong>{market.symbol}</strong>
+                              <span>{market.ticker || market.name} · {maxConfig.label}</span>
+                            </span>
+                            <span className="up-search-result-price">
+                              <strong>${formatPrice(market.price, market.priceDecimals)}</strong>
+                              <span className={change >= 0 ? 'is-up' : 'is-down'}>
+                                {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+                              </span>
+                            </span>
+                            {cursorIndex === index && <kbd className="up-search-enter">↵</kbd>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="up-search-empty">
+                      No pairs match &quot;{searchQuery.trim()}&quot;
+                    </div>
+                  )}
+
+                  {searchMatches.length > 0 && (
+                    <div className="up-search-dropdown-foot">
+                      <span>↑ ↓ move · ↵ open pair · esc close</span>
+                      {searchMatches.length > 5 && (
+                        <span>{searchMatches.length - 5} more below</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </nav>
 
