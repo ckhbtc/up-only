@@ -819,18 +819,6 @@ input:focus-visible {
   grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
 }
 
-.up-market-heading {
-  margin-bottom: 14px;
-}
-
-[data-theme="bauhaus-dark"] .up-market-heading h2 {
-  color: var(--accent-light);
-}
-
-[data-theme="bauhaus-dark"] .up-market-heading > span {
-  color: var(--yellow);
-}
-
 .up-card {
   animation: slide-up 0.22s ease;
   background: var(--bg-card);

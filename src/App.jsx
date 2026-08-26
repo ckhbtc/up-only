@@ -627,11 +627,6 @@ export default function App() {
             tradeBusy={tradeBusy}
           />
 
-          <div className="up-market-heading up-section-title-row">
-            <h2>Available pairs</h2>
-            <span>hottest first</span>
-          </div>
-
           <div className="up-market-grid">
             {sortedMarkets.map(market => {
               const marketRefId = market.marketId ?? market.id;
