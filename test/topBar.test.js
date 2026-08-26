@@ -1,5 +1,6 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import react from '@vitejs/plugin-react';
@@ -61,4 +62,32 @@ test('header uses the UpOnly brand logo', () => {
   }));
 
   assert.match(markup, /class="up-logo-image" src="\/uponlylogo\.png"/);
+});
+
+test('header actions share one fixed control height', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const controlHeight = css.match(/--header-control-height:\s*([^;]+);/)?.[1];
+
+  assert.equal(controlHeight, '40px');
+
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selectors, declarations]) => ({
+    selectors: selectors.split(',').map(selector => selector.trim()),
+    declarations,
+  }));
+
+  for (const selector of [
+    '.up-tabs',
+    '.up-dev-pill',
+    '.up-wallet-pill',
+    '.up-add-cash',
+    '.up-connect',
+    '.theme-toggle',
+    '.wallet-menu-trigger',
+  ]) {
+    const usesSharedHeight = rules.some(rule => (
+      rule.selectors.includes(selector)
+      && /height:\s*var\(--header-control-height\)/.test(rule.declarations)
+    ));
+    assert.equal(usesSharedHeight, true, `${selector} should use the shared height`);
+  }
 });

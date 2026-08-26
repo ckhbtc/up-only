@@ -34,6 +34,7 @@
   --font-heading: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
   --font-body: "Trebuchet MS", Arial, sans-serif;
   --font-mono: "Courier New", Courier, monospace;
+  --header-control-height: 40px;
   --stamp-bg: #101014;
   --stamp-fg: #b8ff2c;
   --focus-ring: #184fe8;
@@ -268,7 +269,8 @@ input:focus-visible {
   display: inline-flex;
   gap: 4px;
   flex: 0 0 auto;
-  padding: 4px;
+  height: var(--header-control-height);
+  padding: 3px;
   position: relative;
 }
 
@@ -287,8 +289,8 @@ input:focus-visible {
   font-size: 17px;
   gap: 7px;
   justify-content: center;
-  min-height: 36px;
-  padding: 7px 14px;
+  min-height: calc(var(--header-control-height) - 12px);
+  padding: 4px 14px;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -317,8 +319,9 @@ input:focus-visible {
   border-radius: 5px;
   display: inline-flex;
   gap: 7px;
-  min-height: 36px;
-  padding: 4px 6px;
+  height: calc(var(--header-control-height) - 12px);
+  min-height: calc(var(--header-control-height) - 12px);
+  padding: 2px 6px;
   width: min(300px, 32vw);
 }
 
@@ -578,6 +581,7 @@ input:focus-visible {
   background: var(--red);
   color: #fff;
   display: inline-flex;
+  height: var(--header-control-height);
   padding: 6px 9px;
 }
 
@@ -586,6 +590,14 @@ input:focus-visible {
   background: var(--accent-grad);
   color: var(--on-accent);
   padding: 6px 12px;
+}
+
+.up-add-cash {
+  height: var(--header-control-height);
+}
+
+.up-connect {
+  height: var(--header-control-height);
 }
 
 .up-connect:disabled {
@@ -598,6 +610,7 @@ input:focus-visible {
   background: var(--bg-card);
   display: inline-flex;
   gap: 8px;
+  height: var(--header-control-height);
   padding: 5px 10px;
 }
 
@@ -621,7 +634,7 @@ input:focus-visible {
   display: inline-flex;
   flex-shrink: 0;
   gap: 0;
-  height: 34px;
+  height: var(--header-control-height);
   padding: 3px;
 }
 
@@ -634,11 +647,11 @@ input:focus-visible {
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 12px;
-  height: 24px;
+  height: 28px;
   justify-content: center;
   line-height: 1;
   padding: 0;
-  width: 24px;
+  width: 28px;
 }
 
 .theme-toggle .theme-icon {
@@ -678,6 +691,7 @@ input:focus-visible {
   font-size: 12px;
   font-weight: 700;
   gap: 8px;
+  height: var(--header-control-height);
   line-height: 1;
   min-height: 34px;
   padding: 7px 10px 6px;
