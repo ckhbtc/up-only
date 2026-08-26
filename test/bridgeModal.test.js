@@ -32,3 +32,9 @@ test('bridge panels use matching identity and value columns', () => {
 
   assert.equal(valueBlocks.length, 2);
 });
+
+test('destination token label omits the native qualifier', () => {
+  const markup = renderBridge();
+
+  assert.doesNotMatch(markup, /USDC \(native\)/i);
+});

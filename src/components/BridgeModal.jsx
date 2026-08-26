@@ -324,7 +324,7 @@ export default function BridgeModal({ onClose }) {
                 </div>
                 <div className="up-bridge-token-line is-end">
                   <CoinLogo symbol="USDC" size={14} />
-                  <span>USDC (native)</span>
+                  <span>USDC</span>
                 </div>
               </div>
             </div>
