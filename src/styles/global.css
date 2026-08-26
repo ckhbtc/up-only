@@ -1957,13 +1957,17 @@ input:focus-visible {
 }
 
 .up-position-viewport {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   padding: 0 4px 5px 0;
+  scroll-snap-type: x proximity;
 }
 
 .up-position-row {
   display: flex;
   gap: 12px;
+  width: max-content;
 }
 
 .up-position-card {
@@ -2278,14 +2282,6 @@ input:focus-visible {
     font-size: 48px;
   }
 
-  .up-position-viewport {
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-  }
-
-  .up-position-row {
-    width: max-content;
-  }
 }
 
 @media (max-width: 640px) {

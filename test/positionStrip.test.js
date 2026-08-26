@@ -86,6 +86,16 @@ test('live price feedback does not move the mark price off its baseline', async 
   assert.match(pricesRule, /align-items: baseline/);
 });
 
+test('position cards horizontally scroll with desktop trackpad gestures', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const viewportRule = css.match(/\.up-position-viewport \{([^}]*)\}/)?.[1] || '';
+  const rowRule = css.match(/\.up-position-row \{([^}]*)\}/)?.[1] || '';
+
+  assert.match(viewportRule, /overflow-x: auto/);
+  assert.match(viewportRule, /overscroll-behavior-x: contain/);
+  assert.match(rowRule, /width: max-content/);
+});
+
 test('position leverage prefers the recorded value and derives indexed positions', () => {
   assert.equal(getPositionLeverage({ leverage: 10, entryPrice: 100, quantity: 0.2, margin: 10 }), 10);
   assert.equal(getPositionLeverage({ entryPrice: 100, quantity: 0.2, margin: 10 }), 2);
