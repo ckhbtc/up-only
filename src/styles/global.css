@@ -804,6 +804,14 @@ input:focus-visible {
   margin-bottom: 14px;
 }
 
+[data-theme="bauhaus-dark"] .up-market-heading h2 {
+  color: var(--accent-light);
+}
+
+[data-theme="bauhaus-dark"] .up-market-heading > span {
+  color: var(--yellow);
+}
+
 .up-card {
   animation: slide-up 0.22s ease;
   background: var(--bg-card);
@@ -1384,6 +1392,7 @@ input:focus-visible {
   border-radius: 12px;
   box-shadow: 10px 10px 0 var(--blue);
   max-width: 520px;
+  min-width: 0;
   overflow: visible;
   width: 100%;
 }
@@ -1817,6 +1826,8 @@ input:focus-visible {
   border-radius: 8px;
   box-shadow: 8px 8px 0 var(--accent-light);
   margin-bottom: 28px;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   padding: 12px 14px 14px;
 }
@@ -1855,6 +1866,7 @@ input:focus-visible {
   display: flex;
   flex: 0 0 auto;
   gap: 9px;
+  min-width: 0;
 }
 
 .up-position-total {
@@ -1866,6 +1878,7 @@ input:focus-visible {
   display: flex;
   gap: 7px;
   min-height: 40px;
+  min-width: 0;
   padding: 5px 10px;
 }
 
@@ -2318,6 +2331,14 @@ input:focus-visible {
     right: 0;
   }
 
+  .wallet-menu {
+    flex-basis: 100%;
+  }
+
+  .wallet-menu-trigger {
+    width: 100%;
+  }
+
   .up-inline-auth {
     align-items: stretch;
     flex-direction: column;
@@ -2425,7 +2446,7 @@ input:focus-visible {
 
   .up-positions-tools {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .up-position-total {
@@ -2458,6 +2479,7 @@ input:focus-visible {
 
   .up-bridge-dialog {
     box-shadow: 6px 6px 0 var(--blue);
+    max-width: calc(100vw - 20px);
   }
 
   .up-bridge-header {
