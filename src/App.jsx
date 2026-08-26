@@ -23,6 +23,7 @@ import {
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
 import { marketsMatchingSearch } from './services/marketSearch';
 import { sortMarketsForUpOnly } from './services/marketSort';
+import { shouldOpenPairSearch } from './services/pairSearchShortcut';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import useWalletStore from './stores/walletStore';
@@ -192,9 +193,7 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
-      const tag = event.target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable) return;
+      if (!shouldOpenPairSearch(event)) return;
       event.preventDefault();
       openSearch();
     };

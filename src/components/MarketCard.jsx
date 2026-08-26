@@ -188,6 +188,7 @@ export default function MarketCard({
             id={`stake-${market.marketId}`}
             type="text"
             inputMode="decimal"
+            data-pair-search-shortcut
             autoComplete="off"
             value={stake}
             onChange={event => handleAmount(event.target.value)}
