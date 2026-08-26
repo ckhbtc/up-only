@@ -13,6 +13,7 @@ coverage/
 sessions.json
 
 # Local-only agent and deployment notes
+AGENTS.md
 CLAUDE.md
 DEPLOYMENT.md
 
