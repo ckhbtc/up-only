@@ -258,7 +258,7 @@ input:focus-visible {
   height: 64px;
   object-fit: contain;
   object-position: left center;
-  width: 64px;
+  width: 96px;
 }
 
 .up-tabs {
@@ -2296,7 +2296,7 @@ input:focus-visible {
 
   .up-logo-image {
     height: 54px;
-    width: 54px;
+    width: 81px;
   }
 
   .up-tabs {

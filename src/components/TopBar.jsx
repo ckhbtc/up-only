@@ -107,7 +107,7 @@ export default function TopBar({
     <header className="up-shell-head">
       <div className="up-header">
         <button type="button" className="up-logo" onClick={onCloseSearch} aria-label="UpOnly home">
-          <img className="up-logo-image" src="/up-only-logo.png" alt="" width={78} height={78} />
+          <img className="up-logo-image" src="/uponlylogo.png" alt="" width={96} height={64} />
         </button>
 
         <div className="up-head-actions">

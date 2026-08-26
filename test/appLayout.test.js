@@ -15,3 +15,9 @@ test('trade failures are shown only in the global transaction status', async () 
   assert.doesNotMatch(appSource, /cardErrors|markCardError/);
   assert.doesNotMatch(cardSource, /\berror\s*=\s*['"]{2}|\{error\s*\|\|/);
 });
+
+test('document uses the UpOnly brand logo as its favicon', async () => {
+  const source = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(source, /<link rel="icon" type="image\/png" href="\/uponlylogo\.png" \/>/);
+});

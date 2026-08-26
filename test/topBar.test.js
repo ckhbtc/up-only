@@ -42,3 +42,23 @@ test('header removes the pairs tab and keeps search in the right-side actions', 
   assert.doesNotMatch(markup, />Pairs</);
   assert.match(markup, /class="up-head-actions"[\s\S]*aria-label="Search pairs"/);
 });
+
+test('header uses the UpOnly brand logo', () => {
+  const markup = renderToStaticMarkup(createElement(TopBar, {
+    theme: 'bauhaus',
+    onSetTheme: () => {},
+    searchOpen: false,
+    searchQuery: '',
+    onOpenSearch: () => {},
+    onCloseSearch: () => {},
+    onSearchQueryChange: () => {},
+    onSelectSearchResult: () => {},
+    onAddFunds: () => {},
+    onRevokeAutosign: () => {},
+    sessionActive: false,
+    revokingAutosign: false,
+    devMode: false,
+  }));
+
+  assert.match(markup, /class="up-logo-image" src="\/uponlylogo\.png"/);
+});
