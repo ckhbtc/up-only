@@ -415,7 +415,7 @@ export default function App() {
   }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, beginTrade, endTrade]);
 
   const handleCardConfirm = useCallback((bet) => {
-    void submitBet(bet);
+    return submitBet(bet);
   }, [submitBet]);
 
   const handleCashOut = useCallback(async (position) => {

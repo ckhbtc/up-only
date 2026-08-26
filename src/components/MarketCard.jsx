@@ -5,6 +5,7 @@ import { formatSpendableAmountInput, sanitizeAmountInput } from '../services/amo
 import { RFQ_OPEN_SLIPPAGE } from '../services/leverageLimits';
 import { RFQ_PREQUOTE_INTERVAL_MS } from '../services/rfqConstants';
 import { buildRfqOrderInput, sendRfqPrequoteRequest } from '../services/rfq';
+import { resetAmountAfterSubmission } from '../services/tradeSubmission';
 import {
   UP_ONLY_DIRECTION,
   UP_ONLY_LEVERAGE_KEY,
@@ -69,7 +70,7 @@ export default function MarketCard({
   const handleHalf = () => setStake(formatSpendableAmountInput(balanceNum / 2));
   const handleAll = () => setStake(formatSpendableAmountInput(balanceNum));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!connected) {
       onConnect?.();
       return;
@@ -80,20 +81,23 @@ export default function MarketCard({
     }
     if (!canSubmit) return;
 
-    onConfirm({
-      market,
-      direction: UP_ONLY_DIRECTION,
-      side: UP_ONLY_SIDE,
-      stake: stakeNum,
-      winTarget: 0,
-      aggr: UP_ONLY_LEVERAGE_KEY,
-      aggrLabel: maxConfig.label,
-      aggrColor: maxConfig.color,
-      leverage,
-      targetMode: UP_ONLY_TARGET_MODE,
-      targetPrice: null,
-      liqPrice,
-    });
+    await resetAmountAfterSubmission(
+      onConfirm({
+        market,
+        direction: UP_ONLY_DIRECTION,
+        side: UP_ONLY_SIDE,
+        stake: stakeNum,
+        winTarget: 0,
+        aggr: UP_ONLY_LEVERAGE_KEY,
+        aggrLabel: maxConfig.label,
+        aggrColor: maxConfig.color,
+        leverage,
+        targetMode: UP_ONLY_TARGET_MODE,
+        targetPrice: null,
+        liqPrice,
+      }),
+      () => setStake(''),
+    );
   };
 
   useEffect(() => {

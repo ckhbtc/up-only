@@ -32,3 +32,10 @@ test('completed transaction toasts are anchored bottom right', async () => {
   assert.doesNotMatch(toastRule, /\btop:|\bleft:|translateX/);
   assert.match(loadingRule, /top:/);
 });
+
+test('market-card confirmation returns the trade settlement promise', async () => {
+  const source = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /handleCardConfirm[\s\S]*?return submitBet\(bet\)/);
+  assert.doesNotMatch(source, /handleCardConfirm[\s\S]*?void submitBet\(bet\)/);
+});
