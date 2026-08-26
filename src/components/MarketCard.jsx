@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import CoinLogo from './CoinLogo';
+import PriceText from './PriceText';
 import { formatPrice, formatUsdcBalance, liquidationPrice } from '../data/mockData';
 import { formatSpendableAmountInput, sanitizeAmountInput } from '../services/amountInput';
 import { RFQ_OPEN_SLIPPAGE } from '../services/leverageLimits';
@@ -171,11 +172,11 @@ export default function MarketCard({
       <div className="up-price-row">
         <div className="up-price-panel">
           <span className="up-label">Mark Price</span>
-          <strong className="up-price">${formatPrice(price, priceDecimals)}</strong>
+          <strong className="up-price">$<PriceText value={formatPrice(price, priceDecimals)} /></strong>
         </div>
         <div className="up-price-panel up-price-panel-liq">
           <span className="up-label">Est Liq</span>
-          <strong className="up-liq-price">${formatPrice(liqPrice, priceDecimals)}</strong>
+          <strong className="up-liq-price">$<PriceText value={formatPrice(liqPrice, priceDecimals)} /></strong>
         </div>
       </div>
 

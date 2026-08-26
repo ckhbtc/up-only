@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatDollar, formatPrice } from '../data/mockData';
+import PriceText from './PriceText';
 import {
   derivePositionLiqPrice,
   isDangerouslyCloseToLiquidation,
@@ -89,9 +90,13 @@ function PositionCard({ position, now, onCashOut, tradeBusy }) {
         <div className="up-position-price-row">
           <span className="up-position-margin">${formatPrice(getPositionMargin(position))} in</span>
           <span className="up-position-prices">
-            <span className="up-position-entry-price">{formatPrice(entryPrice, priceDecimals)}</span>
+            <span className="up-position-entry-price">
+              <PriceText value={formatPrice(entryPrice, priceDecimals)} />
+            </span>
             <span className="up-position-price-arrow">→</span>
-            <span key={markPriceLabel} className="up-live-mark-price">{markPriceLabel}</span>
+            <span key={markPriceLabel} className="up-live-mark-price">
+              <PriceText value={markPriceLabel} />
+            </span>
           </span>
         </div>
 
@@ -101,7 +106,7 @@ function PositionCard({ position, now, onCashOut, tradeBusy }) {
               <span style={{ width: `${Math.round(cushionRatio * 100)}%` }} />
             </div>
             <div className="up-position-liq-label">
-              Liq ${formatPrice(liqPrice, priceDecimals)} · {liqDistancePct.toFixed(1)}% away
+              Liq $<PriceText value={formatPrice(liqPrice, priceDecimals)} /> · {liqDistancePct.toFixed(1)}% away
             </div>
           </div>
         ) : (

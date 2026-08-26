@@ -4,6 +4,7 @@ import { formatPrice, formatUsdcBalance } from '../data/mockData';
 import { moveSearchCursor } from '../services/marketSearch';
 import { maxLongConfigForMarket } from '../services/upOnly';
 import CoinLogo from './CoinLogo';
+import PriceText from './PriceText';
 
 const THEME_SEGS = [
   { id: 'bauhaus', icon: 'sun', label: 'Light' },
@@ -192,7 +193,7 @@ export default function TopBar({
                               <span>{market.ticker || market.name} · {maxConfig.label}</span>
                             </span>
                             <span className="up-search-result-price">
-                              <strong>${formatPrice(market.price, market.priceDecimals)}</strong>
+                              <strong>$<PriceText value={formatPrice(market.price, market.priceDecimals)} /></strong>
                               <span className={change >= 0 ? 'is-up' : 'is-down'}>
                                 {change >= 0 ? '+' : ''}{change.toFixed(2)}%
                               </span>

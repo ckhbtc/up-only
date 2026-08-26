@@ -978,6 +978,15 @@ input:focus-visible {
   text-transform: uppercase;
 }
 
+.up-price-zero-count {
+  display: inline-block;
+  font-size: 0.52em;
+  line-height: 1;
+  position: relative;
+  top: 0.35em;
+  vertical-align: baseline;
+}
+
 .up-price {
   color: var(--blue);
   display: block;
