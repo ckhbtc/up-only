@@ -45,3 +45,10 @@ test('bridge speed boxes omit finality status words', () => {
   assert.doesNotMatch(markup, /Finalized|Confirmed/i);
   assert.match(markup, /<strong>Standard<\/strong><span>free<\/span>/);
 });
+
+test('bridge direction uses a centered vector arrow', () => {
+  const markup = renderBridge();
+
+  assert.match(markup, /class="up-bridge-direction-icon"/);
+  assert.doesNotMatch(markup, /class="up-bridge-direction"[^>]*>↓/);
+});

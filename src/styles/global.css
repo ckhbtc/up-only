@@ -1662,16 +1662,22 @@ input:focus-visible {
   background: var(--accent-dim);
   border: 3px solid var(--border);
   border-radius: 50%;
-  box-shadow: 3px 3px 0 var(--border);
   color: var(--accent);
   display: flex;
-  font-family: var(--font-heading);
-  font-size: 18px;
   height: 34px;
   justify-content: center;
-  line-height: 1;
   margin: 8px auto;
   width: 34px;
+}
+
+.up-bridge-direction-icon {
+  fill: none;
+  height: 19px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: 19px;
 }
 
 .up-bridge-chain-name {

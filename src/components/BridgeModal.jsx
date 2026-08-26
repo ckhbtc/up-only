@@ -309,7 +309,12 @@ export default function BridgeModal({ onClose }) {
             </div>
           </div>
 
-          <div className="up-bridge-direction" aria-hidden="true">↓</div>
+          <div className="up-bridge-direction" aria-hidden="true">
+            <svg className="up-bridge-direction-icon" viewBox="0 0 24 24">
+              <path d="M12 4v14" />
+              <path d="m7.5 13.5 4.5 4.5 4.5-4.5" />
+            </svg>
+          </div>
 
           <div className="up-bridge-panel">
             <div className="up-bridge-label-row"><span>To</span></div>
