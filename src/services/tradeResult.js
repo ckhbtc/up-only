@@ -5,6 +5,9 @@ export function shortenError(message, maxLength = 140) {
 
 export function userFacingTradeError(message) {
   const text = message || 'Unknown error';
+  if (/insufficient margin/i.test(text)) {
+    return 'Transaction reverted due to insufficient margin. Please try again.';
+  }
   if (/no quotes received within wait time/i.test(text)) {
     return 'Order failed, please try again.';
   }

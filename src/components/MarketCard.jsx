@@ -25,7 +25,6 @@ export default function MarketCard({
   opened = false,
   opening = false,
   tradeBusy = false,
-  error = '',
   onConnect,
   onAuthorize,
   onConfirm,
@@ -211,9 +210,9 @@ export default function MarketCard({
         <strong>${formatPrice(positionSize)}</strong>
       </div>
 
-      {(insufficient || error) && (
+      {insufficient && (
         <div className="up-error-stamp" role="alert">
-          {error || `Need more USDC. Balance is $${formatUsdcBalance(balanceNum)}.`}
+          {`Need more USDC. Balance is $${formatUsdcBalance(balanceNum)}.`}
         </div>
       )}
 

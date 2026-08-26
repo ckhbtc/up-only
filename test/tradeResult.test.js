@@ -84,3 +84,10 @@ test('userFacingTradeError hides RFQ gateway allocation timeouts', () => {
     'Order unsuccessful, please try again.'
   );
 });
+
+test('userFacingTradeError explains insufficient margin failures', () => {
+  assert.equal(
+    userFacingTradeError('The order has insufficient margin'),
+    'Transaction reverted due to insufficient margin. Please try again.'
+  );
+});

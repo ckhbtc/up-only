@@ -88,7 +88,6 @@ export default function App() {
   const [authDismissedFor, setAuthDismissedFor] = useState(null);
   const [openedCards, setOpenedCards] = useState({});
   const [openingCards, setOpeningCards] = useState({});
-  const [cardErrors, setCardErrors] = useState({});
   const [tradeBusy, setTradeBusy] = useState(false);
   const tradeLockRef = useRef(null);
   const marketCardRefs = useRef(new Map());
@@ -314,17 +313,6 @@ export default function App() {
     }, 2400);
   }, []);
 
-  const markCardError = useCallback((marketId, message) => {
-    setCardErrors(state => ({ ...state, [marketId]: message }));
-    window.setTimeout(() => {
-      setCardErrors(state => {
-        const next = { ...state };
-        delete next[marketId];
-        return next;
-      });
-    }, 5200);
-  }, []);
-
   const submitBet = useCallback(async (bet) => {
     if (!bet?.market || !connected) return;
     if (!beginTrade()) return;
@@ -339,11 +327,6 @@ export default function App() {
     };
 
     setOpeningCards(state => ({ ...state, [marketId]: true }));
-    setCardErrors(state => {
-      const next = { ...state };
-      delete next[marketId];
-      return next;
-    });
     setTxStatus({
       type: 'loading',
       message: `UpOnly order submitted for ${bet.market.symbol}`,
@@ -425,12 +408,11 @@ export default function App() {
         delete next[marketId];
         return next;
       });
-      markCardError(marketId, message);
       setTxStatus({ type: 'error', message });
       releaseTrade();
       clearTxStatusSoon();
     }
-  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, markCardError, beginTrade, endTrade]);
+  }, [connected, injAddress, refreshBalances, clearTxStatusSoon, markCardOpened, beginTrade, endTrade]);
 
   const handleCardConfirm = useCallback((bet) => {
     void submitBet(bet);
@@ -642,7 +624,6 @@ export default function App() {
                   opened={Boolean(openedCards[market.marketId])}
                   opening={Boolean(openingCards[market.marketId])}
                   tradeBusy={tradeBusy}
-                  error={cardErrors[market.marketId]}
                   onConnect={connect}
                   onAuthorize={handleAuthorizeWallet}
                   onConfirm={handleCardConfirm}
