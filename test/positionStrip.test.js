@@ -94,7 +94,8 @@ test('position header replaces the open-count copy with a visible close-all acti
   }));
 
   assert.doesNotMatch(markup, /open · biggest first/i);
-  assert.match(markup, /class="up-position-close-all"[^>]*>Close all 1</);
+  assert.match(markup, /class="up-position-close-all"[^>]*>Close all</);
+  assert.doesNotMatch(markup, />Close all \d+</);
 });
 
 test('live price feedback does not move the mark price off its baseline', async () => {

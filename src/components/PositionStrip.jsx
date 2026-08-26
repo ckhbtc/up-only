@@ -179,7 +179,7 @@ export default function PositionStrip({
             disabled={tradeBusy || !onCashOutAll}
             aria-label={`Close all ${positions.length} open positions`}
           >
-            Close all {positions.length}
+            Close all
           </button>
         </div>
 
