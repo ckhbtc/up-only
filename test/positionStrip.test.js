@@ -1,5 +1,6 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import react from '@vitejs/plugin-react';
@@ -61,6 +62,16 @@ test('position strip marks the live price for update feedback', () => {
   }));
 
   assert.match(markup, /class="up-live-mark-price">105\.00</);
+});
+
+test('live price feedback does not move the mark price off its baseline', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const animationStart = css.indexOf('@keyframes up-live-mark-tick');
+  const animationEnd = css.indexOf('button:focus-visible', animationStart);
+  const animation = css.slice(animationStart, animationEnd);
+
+  assert.notEqual(animationStart, -1);
+  assert.doesNotMatch(animation, /transform:/);
 });
 
 test('position strip sorts biggest current position value first', () => {

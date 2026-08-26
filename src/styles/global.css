@@ -208,12 +208,10 @@ input[type="number"] {
   0% {
     background: var(--green);
     color: #fff;
-    transform: translateY(-1px) scale(1.08);
   }
   100% {
     background: transparent;
     color: inherit;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -2062,7 +2060,7 @@ input:focus-visible {
   border-radius: 3px;
   display: inline-block;
   padding: 0 2px;
-  transform-origin: center;
+  vertical-align: baseline;
 }
 
 .up-position-asset {
