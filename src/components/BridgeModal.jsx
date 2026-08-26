@@ -14,21 +14,22 @@ import { isPositiveTokenAmount, sanitizeDecimalInput } from '../services/bridgeA
 import { txExplorerUrl } from '../services/explorer';
 import useWalletStore from '../stores/walletStore';
 import { formatUsdcBalance } from '../data/mockData';
+import ChainLogo from './ChainLogo';
+import CoinLogo from './CoinLogo';
 
-// Human-readable status copy keyed by the phase emitted by executeBridge().
 const PHASE_COPY = {
-  'approve-sign':    'Approve USDC - confirm in wallet',
+  'approve-sign': 'Approve USDC - confirm in wallet',
   'approve-confirm': 'Approving USDC...',
-  'burn-sign':       'Burn USDC - confirm in wallet',
-  'burn-confirm':    'Burning on source chain...',
-  attest:            'Waiting for Circle attestation (1–13 min)...',
-  'mint-submit':     'Minting native USDC on INJECTIVE...',
-  'mint-confirm':    'Confirming native USDC balance...',
-  success:           'Bridge complete',
+  'burn-sign': 'Burn USDC - confirm in wallet',
+  'burn-confirm': 'Burning on source chain...',
+  attest: 'Waiting for Circle attestation (1–13 min)...',
+  'mint-submit': 'Minting native USDC on INJECTIVE...',
+  'mint-confirm': 'Confirming native USDC balance...',
+  success: 'Bridge complete',
 };
 
-function shortHash(h) {
-  return h ? `${h.slice(0, 10)}…${h.slice(-6)}` : '';
+function shortHash(hash) {
+  return hash ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : '';
 }
 
 function networkLabel(name) {
@@ -61,31 +62,31 @@ export default function BridgeModal({ onClose }) {
   const chainMenuRef = useRef(null);
 
   const sourceChain = useMemo(
-    () => SOURCE_CHAINS.find((c) => c.id === sourceChainId) || SOURCE_CHAINS[0],
+    () => SOURCE_CHAINS.find(chain => chain.id === sourceChainId) || SOURCE_CHAINS[0],
     [sourceChainId],
   );
 
-  // Pull the source-side USDC balance whenever the chain or wallet changes.
   useEffect(() => {
     let cancelled = false;
     setSrcBalance(null);
     setBalanceErr(null);
     if (!ethAddress) return;
     fetchSourceUsdcBalance(sourceChainId, ethAddress)
-      .then((bal) => { if (!cancelled) setSrcBalance(bal); })
+      .then((balance) => { if (!cancelled) setSrcBalance(balance); })
       .catch((err) => { if (!cancelled) setBalanceErr(err.shortMessage || err.message); });
     return () => { cancelled = true; };
   }, [sourceChainId, ethAddress]);
 
-  // Close the chain menu on outside click or Escape.
   useEffect(() => {
     if (!chainMenuOpen) return;
-    const onDocClick = (e) => {
-      if (chainMenuRef.current && !chainMenuRef.current.contains(e.target)) {
+    const onDocClick = (event) => {
+      if (chainMenuRef.current && !chainMenuRef.current.contains(event.target)) {
         setChainMenuOpen(false);
       }
     };
-    const onKey = (e) => { if (e.key === 'Escape') setChainMenuOpen(false); };
+    const onKey = (event) => {
+      if (event.key === 'Escape') setChainMenuOpen(false);
+    };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -94,20 +95,16 @@ export default function BridgeModal({ onClose }) {
     };
   }, [chainMenuOpen]);
 
-  // Refresh the Fast-CCTP fee quote when the source chain changes. We don't
-  // gate UI on it (Standard is still selectable when the quote fails), but
-  // the toggle should show what Fast will cost before the user commits.
   useEffect(() => {
     let cancelled = false;
     setFastFee(null);
     setFastFeeErr(null);
-    const src = SOURCE_CHAINS.find((c) => c.id === sourceChainId);
-    if (!src) return;
-    fetchRouteFees(src.domain, INJECTIVE.domain)
+    const source = SOURCE_CHAINS.find(chain => chain.id === sourceChainId);
+    if (!source) return;
+    fetchRouteFees(source.domain, INJECTIVE.domain)
       .then((entries) => {
         if (cancelled) return;
-        const entry = findFeeEntry(entries, FAST_FINALITY);
-        setFastFee(entry || null);
+        setFastFee(findFeeEntry(entries, FAST_FINALITY) || null);
       })
       .catch((err) => { if (!cancelled) setFastFeeErr(err.shortMessage || err.message); });
     return () => { cancelled = true; };
@@ -116,8 +113,11 @@ export default function BridgeModal({ onClose }) {
   const handleBridge = useCallback(async () => {
     if (!isPositiveTokenAmount(amount)) return;
     const usdcBalanceBefore = usdcBalance || 0;
-    setError(null); setSuccess(null);
-    setBridging(true); setPhase(null); setPhaseData(null);
+    setError(null);
+    setSuccess(null);
+    setBridging(true);
+    setPhase(null);
+    setPhaseData(null);
     try {
       const result = await executeBridge({
         sourceChainId,
@@ -125,15 +125,15 @@ export default function BridgeModal({ onClose }) {
         senderEvm: ethAddress,
         recipientEvm: ethAddress,
         transferMode,
-        onPhase: (p, data) => { setPhase(p); setPhaseData(data || null); },
+        onPhase: (nextPhase, data) => {
+          setPhase(nextPhase);
+          setPhaseData(data || null);
+        },
       });
       setSuccess(result);
       const expectedDelta = Number(amount) || 0;
       const expectedBalance = usdcBalanceBefore + expectedDelta;
 
-      // The portfolio indexer can lag the confirmed CCTP mint. If the EVM
-      // USDC balance proves the mint landed, hold the UI at that expected
-      // total until the portfolio indexer catches up.
       if (result.evmBalanceConfirmed) {
         applyUsdcBalanceFloor(expectedBalance);
       }
@@ -144,41 +144,44 @@ export default function BridgeModal({ onClose }) {
         startBalance: usdcBalanceBefore,
       }).catch(() => {});
     } catch (err) {
-      const msg = err.shortMessage || err.message || String(err);
+      const message = err.shortMessage || err.message || String(err);
       setError(
-        msg.includes('User denied') || msg.includes('user rejected')
+        message.includes('User denied') || message.includes('user rejected')
           ? 'Transaction cancelled'
-          : msg,
+          : message,
       );
     } finally {
       setBridging(false);
     }
   }, [
-    amount, sourceChainId, ethAddress, injAddress, usdcBalance, transferMode,
-    refreshBalances, pollBalancesUntilChange, applyUsdcBalanceFloor,
+    amount,
+    sourceChainId,
+    ethAddress,
+    injAddress,
+    usdcBalance,
+    transferMode,
+    refreshBalances,
+    pollBalancesUntilChange,
+    applyUsdcBalanceFloor,
   ]);
 
   const handleMax = () => {
     if (srcBalance && srcBalance > 0n) {
       setAmount(sanitizeDecimalInput(formatUnits(srcBalance, 6)));
-      setError(null); setSuccess(null);
+      setError(null);
+      setSuccess(null);
     }
   };
 
-  const balanceLabel =
-    srcBalance != null
-      ? `${formatUsdcBalance(formatUnits(srcBalance, 6))} USDC`
-      : balanceErr
-        ? 'unavailable'
-        : '…';
-
+  const balanceLabel = srcBalance != null
+    ? `${formatUsdcBalance(formatUnits(srcBalance, 6))} USDC`
+    : balanceErr
+      ? 'unavailable'
+      : '…';
   const phaseLabel = phase ? (PHASE_COPY[phase] || phase) : null;
   const sourceNetworkLabel = networkLabel(sourceChain.name);
   const injectiveNetworkLabel = networkLabel(INJECTIVE.name);
 
-  // Fast-mode fee blurb that sits under the "Fast" pill - shows the route fee
-  // either as bps, or (once an amount is entered) as the buffered max-fee in
-  // USDC subunits. Falls back to "unavailable" if Circle's quote 500s.
   let fastFeeLabel = 'Confirmed · quote…';
   if (fastFeeErr) {
     fastFeeLabel = 'Unavailable';
@@ -202,372 +205,206 @@ export default function BridgeModal({ onClose }) {
 
   return (
     <div
-      onClick={(e) => { if (e.target === e.currentTarget && !bridging) onClose(); }}
-      style={{
-        position: 'fixed', inset: 0, background: 'var(--overlay)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 200, backdropFilter: 'blur(4px)', padding: 18,
-        boxSizing: 'border-box', overflowY: 'auto',
+      className="up-bridge-backdrop"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !bridging) onClose();
       }}
     >
-      <div style={{
-        background: 'var(--bg-card)', border: '3px solid var(--border)',
-        borderRadius: 18, width: '100%', maxWidth: 460,
-        animation: 'slide-up 0.25s ease', overflow: 'hidden',
-        boxShadow: '8px 8px 0 var(--border)',
-      }}>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '20px 24px', borderBottom: '3px solid var(--border)',
-        }}>
+      <section
+        className="up-bridge-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="up-bridge-title"
+      >
+        <header className="up-bridge-header">
           <div>
-            <div style={{
-              fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-              textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 4,
-            }}>Add funds · CCTP V2</div>
-            <div style={{
-              fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-heading)',
-              letterSpacing: -0.3,
-            }}>Bridge USDC to {injectiveNetworkLabel}</div>
+            <div className="up-bridge-kicker">Add funds · CCTP V2</div>
+            <h2 id="up-bridge-title">Bridge USDC to {injectiveNetworkLabel}</h2>
           </div>
           <button
+            type="button"
+            className="up-bridge-close"
             onClick={onClose}
             disabled={bridging}
-            style={{
-              background: 'transparent', border: 'none', fontSize: 24,
-              color: 'var(--text-muted)', cursor: bridging ? 'not-allowed' : 'pointer',
-              lineHeight: 1, padding: 4,
-            }}
-          >×</button>
-        </div>
+            aria-label="Close bridge"
+          >
+            ×
+          </button>
+        </header>
 
-        <div style={{ padding: '22px 24px 24px' }}>
-          {/* From: chain picker + amount */}
-          <div style={{
-            background: 'var(--bg-primary)', border: '2px solid var(--border)',
-            borderRadius: 12, padding: '14px 16px', marginBottom: 0,
-          }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-              textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6,
-            }}>
+        <div className="up-bridge-body">
+          <div className="up-bridge-panel">
+            <div className="up-bridge-label-row">
               <span>From</span>
               <span>
                 Balance: {balanceLabel}{' '}
                 {srcBalance && srcBalance > 0n && (
-                  <button
-                    onClick={handleMax}
-                    disabled={bridging}
-                    style={{
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      color: 'var(--accent)', fontFamily: 'var(--font-mono)',
-                      fontSize: 10, padding: 0, textDecoration: 'underline',
-                      letterSpacing: 1.5,
-                    }}
-                  >MAX</button>
+                  <button type="button" onClick={handleMax} disabled={bridging}>MAX</button>
                 )}
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-              <div ref={chainMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+
+            <div className="up-bridge-panel-main">
+              <div ref={chainMenuRef} className="up-chain-picker">
                 <button
                   type="button"
-                  onClick={() => !bridging && setChainMenuOpen((o) => !o)}
+                  className="up-chain-trigger"
+                  onClick={() => !bridging && setChainMenuOpen(open => !open)}
                   disabled={bridging}
                   aria-haspopup="listbox"
                   aria-expanded={chainMenuOpen}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    background: 'transparent', border: 'none', outline: 'none',
-                    fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-heading)',
-                    color: 'var(--text-primary)',
-                    cursor: bridging ? 'not-allowed' : 'pointer',
-                    padding: '2px 0', textTransform: 'uppercase',
-                    letterSpacing: 0.3,
-                  }}
                 >
+                  <ChainLogo chainId={sourceChain.id} name={sourceChain.name} size={22} />
                   <span>{sourceNetworkLabel}</span>
-                  <span style={{
-                    fontSize: 10, lineHeight: 1, color: 'var(--text-muted)',
-                    transform: chainMenuOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s ease',
-                  }}>▼</span>
+                  <span className="up-chain-caret">{chainMenuOpen ? '▲' : '▼'}</span>
                 </button>
+
                 {chainMenuOpen && (
-                  <div
-                    role="listbox"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: 0,
-                      zIndex: 300,
-                      minWidth: 220,
-                      background: 'var(--bg-card)',
-                      border: '2px solid var(--border)',
-                      boxShadow: '6px 6px 0 var(--accent-light)',
-                      padding: 4,
-                      display: 'flex', flexDirection: 'column',
-                    }}
-                  >
-                    {SOURCE_CHAINS.map((c) => {
-                      const active = c.id === sourceChainId;
+                  <div className="up-chain-menu" role="listbox" aria-label="Bridge source chain">
+                    <div className="up-chain-menu-head">Bridge from</div>
+                    {SOURCE_CHAINS.map((chain) => {
+                      const active = chain.id === sourceChainId;
                       return (
                         <button
-                          key={c.id}
+                          key={chain.id}
+                          type="button"
                           role="option"
                           aria-selected={active}
+                          className={`up-chain-option ${active ? 'is-active' : ''}`}
                           onClick={() => {
-                            setSourceChainId(c.id);
+                            setSourceChainId(chain.id);
                             setChainMenuOpen(false);
                           }}
-                          onMouseEnter={(e) => {
-                            if (!active) e.currentTarget.style.background = 'var(--bg-card-hover)';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!active) e.currentTarget.style.background = 'transparent';
-                          }}
-                          style={{
-                            background: active ? 'var(--accent-light)' : 'transparent',
-                            border: 'none', textAlign: 'left',
-                            fontSize: 13, fontWeight: 700,
-                            fontFamily: 'var(--font-heading)',
-                            color: active ? 'var(--stamp-bg)' : 'var(--text-primary)',
-                            cursor: 'pointer',
-                            padding: '10px 12px',
-                            textTransform: 'uppercase', letterSpacing: 0.5,
-                            display: 'flex', alignItems: 'center',
-                            justifyContent: 'space-between', gap: 12,
-                          }}
                         >
-                          <span>{networkLabel(c.name)}</span>
-                          {active && (
-                            <span style={{
-                              fontSize: 12, fontFamily: 'var(--font-mono)',
-                              color: 'var(--accent)',
-                            }}>●</span>
-                          )}
+                          <ChainLogo chainId={chain.id} name={chain.name} size={24} />
+                          <span>{networkLabel(chain.name)}</span>
+                          {active && <span className="up-chain-selected">●</span>}
                         </button>
                       );
                     })}
                   </div>
                 )}
               </div>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(sanitizeDecimalInput(e.target.value));
-                  setError(null); setSuccess(null);
-                }}
-                disabled={bridging}
-                style={{
-                  flex: 1, maxWidth: 180, textAlign: 'right',
-                  background: 'transparent', border: 'none', outline: 'none',
-                  fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                  color: 'var(--text-primary)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              />
-            </div>
-            <div style={{
-              fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-              marginTop: 4,
-            }}>USDC</div>
-          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
-            <div
-              aria-hidden="true"
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: 'var(--accent-dim)',
-                border: '2px solid var(--border)',
-                boxShadow: '3px 3px 0 var(--border)',
-                color: 'var(--accent)',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 18,
-                fontWeight: 900,
-                fontFamily: 'var(--font-heading)',
-                lineHeight: 1,
-              }}
-            >
-              ↓
-            </div>
-          </div>
-
-          {/* To: INJECTIVE (fixed) */}
-          <div style={{
-            background: 'var(--bg-primary)', border: '2px solid var(--border)',
-            borderRadius: 12, padding: '14px 16px', marginBottom: 16,
-          }}>
-            <div style={{
-              fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)',
-              textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6,
-            }}>To</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-heading)' }}>{injectiveNetworkLabel}</div>
-                <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>USDC (native)</div>
+              <div className="up-bridge-amount-block">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(event) => {
+                    setAmount(sanitizeDecimalInput(event.target.value));
+                    setError(null);
+                    setSuccess(null);
+                  }}
+                  disabled={bridging}
+                  autoComplete="off"
+                  aria-label="USDC bridge amount"
+                />
+                <div className="up-bridge-token-line">
+                  <CoinLogo symbol="USDC" size={14} />
+                  <span>USDC</span>
+                </div>
               </div>
-              <div style={{
-                fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                color: amount ? 'var(--green)' : 'var(--text-muted)',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
+            </div>
+          </div>
+
+          <div className="up-bridge-direction" aria-hidden="true">↓</div>
+
+          <div className="up-bridge-panel">
+            <div className="up-bridge-label-row"><span>To</span></div>
+            <div className="up-bridge-panel-main">
+              <div className="up-bridge-chain-name">
+                <ChainLogo chainId={INJECTIVE.id} name={INJECTIVE.name} size={22} />
+                <strong>{injectiveNetworkLabel}</strong>
+              </div>
+              <div className={`up-bridge-received ${amount ? 'has-amount' : ''}`}>
                 {amount || '-'}
               </div>
             </div>
+            <div className="up-bridge-token-line is-end">
+              <CoinLogo symbol="USDC" size={14} />
+              <span>USDC (native)</span>
+            </div>
           </div>
 
-          {/* Speed toggle */}
-          <div style={{
-            display: 'flex', gap: 6, marginBottom: 12,
-          }}>
+          <div className="up-bridge-speed" role="group" aria-label="Bridge speed">
             {[
               { id: 'standard', label: 'Standard', sub: 'Finalized · free' },
-              { id: 'fast',     label: 'Fast',     sub: fastFeeLabel },
-            ].map((opt) => {
-              const active = transferMode === opt.id;
-              const disabled = bridging || (opt.id === 'fast' && fastFeeErr);
+              { id: 'fast', label: 'Fast', sub: fastFeeLabel },
+            ].map((option) => {
+              const active = transferMode === option.id;
+              const disabled = bridging || (option.id === 'fast' && fastFeeErr);
               return (
                 <button
-                  key={opt.id}
-                  onClick={() => !disabled && setTransferMode(opt.id)}
+                  key={option.id}
+                  type="button"
+                  className={active ? 'is-active' : ''}
+                  onClick={() => !disabled && setTransferMode(option.id)}
                   disabled={disabled}
-                  style={{
-                    flex: 1,
-                    background: active ? 'var(--accent-dim)' : 'var(--bg-primary)',
-                    border: `2px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                    borderRadius: 10, padding: '10px 12px',
-                    textAlign: 'left',
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                    opacity: disabled ? 0.55 : 1,
-                  }}
+                  aria-pressed={active}
                 >
-                  <div style={{
-                    fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-heading)',
-                    color: active ? 'var(--accent)' : 'var(--text-primary)',
-                  }}>{opt.label}</div>
-                  <div style={{
-                    fontSize: 10, fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-muted)', marginTop: 2,
-                  }}>{opt.sub}</div>
+                  <strong>{option.label}</strong>
+                  <span>{option.sub}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Phase indicator */}
           {bridging && phaseLabel && (
-            <div style={{
-              background: 'var(--accent-dim)', border: '1px solid var(--accent)',
-              borderRadius: 8, padding: '10px 12px', marginBottom: 12,
-              fontSize: 12, color: 'var(--accent)', textAlign: 'center',
-              fontFamily: 'var(--font-mono)',
-            }}>
+            <div className="up-bridge-state is-phase" aria-live="polite">
               {phaseLabel}
-              {phaseData?.txHash && (
-                <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>
-                  {shortHash(phaseData.txHash)}
-                </div>
-              )}
+              {phaseData?.txHash && <span>{shortHash(phaseData.txHash)}</span>}
             </div>
           )}
 
           {error && (
-            <div style={{
-              background: 'var(--red-dim)', border: '1px solid var(--red)',
-              borderRadius: 8, padding: '10px 12px', marginBottom: 12,
-              fontSize: 12, color: 'var(--red)', textAlign: 'center',
-            }}>{error}</div>
+            <div className="up-bridge-state is-error" role="alert">{error}</div>
           )}
 
           {success && (
-            <div style={{
-              background: 'var(--green-dim)', border: '1px solid var(--green)',
-              borderRadius: 8, padding: 12, marginBottom: 12,
-              fontSize: 13, color: 'var(--green)', textAlign: 'center',
-              fontFamily: 'var(--font-mono)',
-            }}>
+            <div className="up-bridge-state is-success" aria-live="polite">
               Native USDC arrived on {injectiveNetworkLabel}.
-              <div style={{ fontSize: 11, marginTop: 6, opacity: 0.85 }}>
+              <span>
                 burn: <a
                   href={`${success.srcExplorer}/tx/${success.burnHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--green)' }}
-                >{shortHash(success.burnHash)}</a>
-              </div>
-              <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>
+                >
+                  {shortHash(success.burnHash)}
+                </a>
+              </span>
+              <span>
                 mint: <a
                   href={txExplorerUrl(success.mintHash)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--green)' }}
-                >{shortHash(success.mintHash)}</a>
-              </div>
+                >
+                  {shortHash(success.mintHash)}
+                </a>
+              </span>
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            {!success ? (
-              <button
-                onClick={handleBridge}
-                disabled={bridging || !isPositiveTokenAmount(amount) || !ethAddress}
-                style={{
-                  flex: 1, background: 'var(--accent-grad)',
-                  color: 'var(--on-accent)', border: 'none', borderRadius: 10,
-                  padding: '14px 0', fontSize: 14, fontWeight: 700,
-                  cursor: (bridging || !isPositiveTokenAmount(amount))
-                    ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-heading)',
-                  opacity: !isPositiveTokenAmount(amount) ? 0.5 : 1,
-                  boxShadow: '4px 4px 0 var(--border)',
-                }}
-              >
-                {bridging ? 'Bridging…' : (
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                  }}>
-                    <span>Bridge from {sourceNetworkLabel}</span>
-                    <span style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      background: 'var(--on-accent)',
-                      color: 'var(--accent)',
-                      display: 'grid',
-                      placeItems: 'center',
-                      lineHeight: 1,
-                    }}>→</span>
-                  </span>
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={onClose}
-                style={{
-                  flex: 1, background: 'var(--green-dim)',
-                  border: '1px solid var(--green)',
-                  borderRadius: 10, padding: '14px 0', color: 'var(--green)',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >Done</button>
-            )}
-          </div>
-
+          {!success ? (
+            <button
+              type="button"
+              className="up-bridge-submit"
+              onClick={handleBridge}
+              disabled={bridging || !isPositiveTokenAmount(amount) || !ethAddress}
+            >
+              {bridging ? 'Bridging…' : (
+                <>
+                  <span>Bridge from {sourceNetworkLabel}</span>
+                  <span aria-hidden="true">→</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button type="button" className="up-bridge-done" onClick={onClose}>Done</button>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
