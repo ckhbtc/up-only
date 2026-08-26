@@ -13,6 +13,19 @@ export function getPositionMargin(position) {
   return numberOrZero(position?.margin ?? position?.stake);
 }
 
+export function getPositionLeverage(position) {
+  const recorded = Number(position?.leverage);
+  if (Number.isFinite(recorded) && recorded > 0) return recorded;
+
+  const entryPrice = Math.abs(Number(position?.entryPrice));
+  const quantity = Math.abs(Number(position?.quantity));
+  const margin = getPositionMargin(position);
+  if (!entryPrice || !quantity || !margin) return null;
+
+  const leverage = (entryPrice * quantity) / margin;
+  return Number.isFinite(leverage) && leverage > 0 ? leverage : null;
+}
+
 export function getPositionValue(position, now = Date.now()) {
   return getPositionMargin(position) + getPositionDisplay(position, now).pnl;
 }

@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 import { createServer } from 'vite';
 import {
   getPositionDisplay,
+  getPositionLeverage,
   getPositionStripPage,
   getPositionStripTotals,
   getPositionValue,
@@ -54,6 +55,7 @@ test('position strip marks the live price for update feedback', () => {
       currentPrice: 105,
       quantity: 0.2,
       margin: 10,
+      leverage: 10,
       pnl: 1,
       pnlPct: 10,
       market: { priceDecimals: 2 },
@@ -62,6 +64,11 @@ test('position strip marks the live price for update feedback', () => {
   }));
 
   assert.match(markup, /class="up-live-mark-price">105\.00</);
+  assert.match(markup, /class="up-position-leverage">10x</);
+  assert.match(
+    markup,
+    /class="up-position-prices"><span class="up-position-entry-price">100\.00<\/span><span class="up-position-price-arrow">→<\/span><span class="up-live-mark-price">105\.00<\/span>/,
+  );
 });
 
 test('live price feedback does not move the mark price off its baseline', async () => {
@@ -72,6 +79,16 @@ test('live price feedback does not move the mark price off its baseline', async 
 
   assert.notEqual(animationStart, -1);
   assert.doesNotMatch(animation, /transform:/);
+
+  const pricesRule = css.match(/\.up-position-prices \{([^}]*)\}/)?.[1] || '';
+  assert.match(pricesRule, /display: inline-flex/);
+  assert.match(pricesRule, /align-items: baseline/);
+});
+
+test('position leverage prefers the recorded value and derives indexed positions', () => {
+  assert.equal(getPositionLeverage({ leverage: 10, entryPrice: 100, quantity: 0.2, margin: 10 }), 10);
+  assert.equal(getPositionLeverage({ entryPrice: 100, quantity: 0.2, margin: 10 }), 2);
+  assert.equal(getPositionLeverage({ entryPrice: 100, quantity: 0.2, margin: 0 }), null);
 });
 
 test('position strip sorts biggest current position value first', () => {

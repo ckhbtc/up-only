@@ -63,6 +63,7 @@ function buildOptimisticOpenPosition(bet, executionInput = null) {
     entryPrice,
     markPrice: entryPrice,
     margin: Number(bet.stake) || 0,
+    leverage: Number(bet.leverage) || null,
     liqPrice: bet.liqPrice || null,
     tpPrice: bet.targetPrice || null,
     targetMode: bet.targetMode || UP_ONLY_TARGET_MODE,
