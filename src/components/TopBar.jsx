@@ -110,28 +110,23 @@ export default function TopBar({
           <img className="up-logo-image" src="/up-only-logo.png" alt="" width={78} height={78} />
         </button>
 
-        <nav className="up-tabs" aria-label="Primary">
-          <button
-            type="button"
-            onClick={onCloseSearch}
-            className={`up-tab ${searchOpen ? '' : 'is-active'}`}
-          >
-            Pairs
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            className={`up-tab up-search-tab ${searchOpen ? 'is-active' : ''}`}
-            aria-label="Search pairs"
-            aria-keyshortcuts="/"
-            title="Search pairs"
-          >
-            <SearchIcon />
-            <span>Search</span>
-            {!searchOpen && <kbd className="up-search-key">/</kbd>}
-          </button>
-          {searchOpen && (
-            <>
+        <div className="up-head-actions">
+          <div className={`up-tabs up-search-area ${searchOpen ? 'is-open' : ''}`}>
+            {!searchOpen ? (
+              <button
+                type="button"
+                onClick={onOpenSearch}
+                className="up-tab up-search-tab"
+                aria-label="Search pairs"
+                aria-keyshortcuts="/"
+                title="Search pairs"
+              >
+                <SearchIcon />
+                <span>Search</span>
+                <kbd className="up-search-key">/</kbd>
+              </button>
+            ) : (
+              <>
               <div className="up-nav-search">
                 <SearchIcon />
                 <input
@@ -223,11 +218,10 @@ export default function TopBar({
                   )}
                 </div>
               )}
-            </>
-          )}
-        </nav>
+              </>
+            )}
+          </div>
 
-        <div className="up-head-actions">
           {devMode && (
             <span className="up-dev-pill" title="Dev mode active. Type D-E-V to toggle off.">
               DEV

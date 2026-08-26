@@ -222,10 +222,10 @@ input:focus-visible {
 .up-header {
   align-items: center;
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
-  min-height: 76px;
-  padding: 10px 22px 12px;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 62px;
+  padding: 6px 18px 8px;
 }
 
 .up-logo {
@@ -242,10 +242,10 @@ input:focus-visible {
 .up-logo-image {
   display: block;
   filter: drop-shadow(3px 4px 0 rgba(16, 16, 20, 0.28));
-  height: 78px;
+  height: 64px;
   object-fit: contain;
   object-position: left center;
-  width: 78px;
+  width: 64px;
 }
 
 .up-tabs {
@@ -256,9 +256,13 @@ input:focus-visible {
   box-shadow: 4px 4px 0 var(--border);
   display: inline-flex;
   gap: 4px;
-  justify-self: center;
+  flex: 0 0 auto;
   padding: 4px;
   position: relative;
+}
+
+.up-search-area.is-open {
+  padding: 3px;
 }
 
 .up-tab {
@@ -388,11 +392,12 @@ input:focus-visible {
   border: 4px solid var(--border);
   border-radius: 8px;
   box-shadow: 10px 10px 0 var(--blue);
-  left: 50%;
+  left: auto;
   overflow: hidden;
   position: absolute;
   top: calc(100% + 8px);
-  transform: translateX(-50%);
+  right: 0;
+  transform: none;
   width: min(560px, calc(100vw - 24px));
   z-index: 220;
 }
@@ -541,6 +546,7 @@ input:focus-visible {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  justify-self: stretch;
 }
 
 .up-dev-pill,
@@ -2206,17 +2212,15 @@ input:focus-visible {
 
 @media (max-width: 1120px) {
   .up-header {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .up-logo,
-  .up-tabs,
-  .up-head-actions {
-    justify-self: center;
+  .up-logo {
+    justify-self: start;
   }
 
   .up-head-actions {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   .up-positions-header {
@@ -2269,13 +2273,14 @@ input:focus-visible {
 
 @media (max-width: 640px) {
   .up-header {
-    gap: 12px;
-    padding: 10px 12px 12px;
+    align-items: start;
+    gap: 10px;
+    padding: 6px 10px 8px;
   }
 
   .up-logo-image {
-    height: 68px;
-    width: 68px;
+    height: 54px;
+    width: 54px;
   }
 
   .up-tabs {
