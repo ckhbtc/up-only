@@ -21,3 +21,14 @@ test('document uses the UpOnly brand logo as its favicon', async () => {
 
   assert.match(source, /<link rel="icon" type="image\/png" href="\/uponlylogo\.png" \/>/);
 });
+
+test('completed transaction toasts are anchored bottom right', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const toastRule = css.match(/\.tx-status-toast \{([^}]*)\}/)?.[1] || '';
+  const loadingRule = css.match(/\.tx-loading-stage \{([^}]*)\}/)?.[1] || '';
+
+  assert.match(toastRule, /bottom:/);
+  assert.match(toastRule, /right:/);
+  assert.doesNotMatch(toastRule, /\btop:|\bleft:|translateX/);
+  assert.match(loadingRule, /top:/);
+});

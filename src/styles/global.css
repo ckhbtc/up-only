@@ -1170,20 +1170,19 @@ input:focus-visible {
 
 .tx-status-toast {
   animation: slide-up 0.3s ease;
+  bottom: 24px;
   border: 3px solid var(--border);
   border-radius: 8px;
   box-shadow: 5px 5px 0 var(--border);
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 900;
-  left: 50%;
   line-height: 1.25;
   max-width: min(460px, calc(100vw - 32px));
   padding: 12px 18px;
   position: fixed;
+  right: 24px;
   text-align: center;
-  top: 122px;
-  transform: translateX(-50%);
   z-index: 300;
 }
 
@@ -2399,7 +2398,8 @@ input:focus-visible {
   }
 
   .tx-status-toast {
-    top: 150px;
+    bottom: 14px;
+    right: 14px;
   }
 
   .tx-loading-stage {
