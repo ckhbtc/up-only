@@ -133,7 +133,6 @@ export default function PositionStrip({
   positions = [],
   onCashOut,
   onCashOutAll,
-  devMode,
   tradeBusy = false,
 }) {
   const [now, setNow] = useState(() => Date.now());
@@ -173,20 +172,18 @@ export default function PositionStrip({
       <div className="up-positions-header">
         <div className="up-section-title-row">
           <h2 id="up-positions-title">Your positions</h2>
-          <span>{positions.length} open · biggest first</span>
+          <button
+            type="button"
+            className="up-position-close-all"
+            onClick={onCashOutAll}
+            disabled={tradeBusy || !onCashOutAll}
+            aria-label={`Close all ${positions.length} open positions`}
+          >
+            Close all {positions.length}
+          </button>
         </div>
 
         <div className="up-positions-tools">
-          {devMode && (
-            <button
-              type="button"
-              className="up-position-close-all"
-              onClick={onCashOutAll}
-              disabled={tradeBusy}
-            >
-              Cash out all
-            </button>
-          )}
           <div className={`up-position-total ${totals.openPnl < 0 ? 'is-negative' : 'is-positive'}`}>
             <span>Open PnL</span>
             <strong>{formatDollar(totals.openPnl)}</strong>

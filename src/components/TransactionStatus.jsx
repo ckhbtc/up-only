@@ -6,7 +6,9 @@ function bannerText(message) {
 
 function phaseLabels(message) {
   const lower = String(message || '').toLowerCase();
-  if (lower.includes('cash-out')) return ['QUOTE', 'MATCH', 'BROADCAST', 'CONFIRM'];
+  if (lower.includes('cash-out') || lower.includes('cash out') || lower.includes('closing')) {
+    return ['QUOTE', 'MATCH', 'BROADCAST', 'CONFIRM'];
+  }
   if (lower.includes('take profit') || lower.includes('wallet')) return ['WALLET', 'SUBMIT', 'VERIFY'];
   if (lower.includes('matched')) return ['MATCHED', 'BROADCAST', 'CONFIRM'];
   if (lower.includes('revoking')) return ['BUILD', 'SIGN', 'CONFIRM'];

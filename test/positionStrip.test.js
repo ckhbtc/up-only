@@ -72,6 +72,31 @@ test('position strip marks the live price for update feedback', () => {
   );
 });
 
+test('position header replaces the open-count copy with a visible close-all action', () => {
+  const markup = renderToStaticMarkup(createElement(PositionStrip, {
+    positions: [{
+      id: 'btc-long',
+      asset: 'BTC',
+      side: 'long',
+      direction: 'long',
+      entryPrice: 100,
+      markPrice: 105,
+      currentPrice: 105,
+      quantity: 0.2,
+      margin: 10,
+      leverage: 10,
+      pnl: 1,
+      pnlPct: 10,
+      market: { priceDecimals: 2 },
+    }],
+    onCashOut: () => {},
+    onCashOutAll: () => {},
+  }));
+
+  assert.doesNotMatch(markup, /open · biggest first/i);
+  assert.match(markup, /class="up-position-close-all"[^>]*>Close all 1</);
+});
+
 test('live price feedback does not move the mark price off its baseline', async () => {
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
   const animationStart = css.indexOf('@keyframes up-live-mark-tick');

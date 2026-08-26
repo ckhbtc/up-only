@@ -24,6 +24,7 @@ import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
 import { marketsMatchingSearch } from './services/marketSearch';
 import { sortMarketsForUpOnly } from './services/marketSort';
 import { shouldOpenPairSearch } from './services/pairSearchShortcut';
+import { closePositionsSequentially } from './services/closeAllPositions';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import { startWalletBalanceRefresh } from './services/walletRefresh';
@@ -520,34 +521,37 @@ export default function App() {
     const list = useMarketStore.getState().positions.filter(p => p.market && isUpOnlyPosition(p));
     if (!list.length) return;
     if (!beginTrade()) return;
-    let ok = 0;
-    let fail = 0;
     try {
-      for (let i = 0; i < list.length; i++) {
-        const pos = list[i];
-        setTxStatus({ type: 'loading', message: `Cash out ${i + 1}/${list.length}: ${pos.asset}...` });
-        try {
-          await tradeCloseRfq({
-            granterAddress: injAddress,
-            marketId: pos.marketId,
-            side: pos.side,
-            quantity: pos.quantity,
-            market: pos.market,
-            oraclePrice: pos.markPrice
-              || pos.currentPrice
-              || latestCachedPrice(pos.marketId, pos.market?.price),
+      const { closed, failed } = await closePositionsSequentially({
+        positions: list,
+        onProgress: ({ index, total, position }) => {
+          setTxStatus({
+            type: 'loading',
+            message: `Closing ${index + 1} of ${total}: ${position.asset}`,
           });
-          ok += 1;
-        } catch (err) {
-          fail += 1;
-          console.error(`cash-out-all: ${pos.asset} failed`, err);
-        }
-      }
+        },
+        closePosition: pos => tradeCloseRfq({
+          granterAddress: injAddress,
+          marketId: pos.marketId,
+          side: pos.side,
+          quantity: pos.quantity,
+          market: pos.market,
+          oraclePrice: pos.markPrice
+            || pos.currentPrice
+            || latestCachedPrice(pos.marketId, pos.market?.price),
+        }),
+        onClosed: ({ position }) => {
+          useMarketStore.getState().addOptimisticClosedPosition(position);
+        },
+        onError: ({ position, error }) => {
+          console.error(`cash-out-all: ${position.asset} failed`, error);
+        },
+      });
       setTxStatus({
-        type: fail === 0 ? 'success' : 'error',
-        message: fail === 0
-          ? `Closed ${ok} position${ok === 1 ? '' : 's'}`
-          : `Closed ${ok}, ${fail} failed`,
+        type: failed === 0 ? 'success' : 'error',
+        message: failed === 0
+          ? `Closed ${closed} position${closed === 1 ? '' : 's'}`
+          : `Closed ${closed}, ${failed} failed`,
       });
       endTrade();
       refreshBalances();
@@ -625,7 +629,6 @@ export default function App() {
             positions={visiblePositions}
             onCashOut={handleCashOut}
             onCashOutAll={handleCashOutAll}
-            devMode={devMode}
             tradeBusy={tradeBusy}
           />
 

@@ -1866,14 +1866,6 @@ input:focus-visible {
   line-height: 1;
 }
 
-.up-section-title-row > span {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 .up-positions-tools {
   align-items: center;
   display: flex;
@@ -1928,9 +1920,9 @@ input:focus-visible {
   color: #fff;
   display: inline-flex;
   font-family: var(--font-heading);
-  font-size: 14px;
-  min-height: 40px;
-  padding: 6px 10px;
+  font-size: 18px;
+  min-height: 44px;
+  padding: 8px 16px;
   text-shadow: 1px 1px 0 var(--border);
   text-transform: uppercase;
 }
