@@ -155,6 +155,8 @@ export default function PositionStrip({
     setPageIndex(0);
   }, [sortedPositions.length]);
 
+  if (positions.length === 0) return null;
+
   return (
     <section className="up-positions" aria-labelledby="up-positions-title">
       <div className="up-positions-header">
@@ -163,70 +165,60 @@ export default function PositionStrip({
           <span>{positions.length} open · biggest first</span>
         </div>
 
-        {positions.length > 0 && (
-          <div className="up-positions-tools">
-            {devMode && (
-              <button
-                type="button"
-                className="up-position-close-all"
-                onClick={onCashOutAll}
-                disabled={tradeBusy}
-              >
-                Cash out all
-              </button>
-            )}
-            <div className={`up-position-total ${totals.openPnl < 0 ? 'is-negative' : 'is-positive'}`}>
-              <span>Open PnL</span>
-              <strong>{formatDollar(totals.openPnl)}</strong>
-            </div>
-            <div className="up-position-total">
-              <span>Exposure</span>
-              <strong>${formatPrice(totals.exposure)}</strong>
-            </div>
-            <div className="up-position-pager">
-              <span>{firstVisible}-{lastVisible} of {sortedPositions.length}</span>
-              <button
-                type="button"
-                onClick={() => setPageIndex(index => Math.max(0, index - 1))}
-                disabled={safePageIndex === 0}
-                aria-label="Previous positions"
-              >
-                ◀
-              </button>
-              <button
-                type="button"
-                onClick={() => setPageIndex(index => Math.min(pageCount - 1, index + 1))}
-                disabled={safePageIndex >= pageCount - 1}
-                aria-label="Next positions"
-              >
-                ▶
-              </button>
-            </div>
+        <div className="up-positions-tools">
+          {devMode && (
+            <button
+              type="button"
+              className="up-position-close-all"
+              onClick={onCashOutAll}
+              disabled={tradeBusy}
+            >
+              Cash out all
+            </button>
+          )}
+          <div className={`up-position-total ${totals.openPnl < 0 ? 'is-negative' : 'is-positive'}`}>
+            <span>Open PnL</span>
+            <strong>{formatDollar(totals.openPnl)}</strong>
           </div>
-        )}
+          <div className="up-position-total">
+            <span>Exposure</span>
+            <strong>${formatPrice(totals.exposure)}</strong>
+          </div>
+          <div className="up-position-pager">
+            <span>{firstVisible}-{lastVisible} of {sortedPositions.length}</span>
+            <button
+              type="button"
+              onClick={() => setPageIndex(index => Math.max(0, index - 1))}
+              disabled={safePageIndex === 0}
+              aria-label="Previous positions"
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageIndex(index => Math.min(pageCount - 1, index + 1))}
+              disabled={safePageIndex >= pageCount - 1}
+              aria-label="Next positions"
+            >
+              ▶
+            </button>
+          </div>
+        </div>
       </div>
 
-      {positions.length > 0 ? (
-        <div className="up-position-viewport">
-          <div className="up-position-row">
-            {visiblePositions.map(position => (
-              <PositionCard
-                key={position.id}
-                position={position}
-                now={now}
-                onCashOut={onCashOut}
-                tradeBusy={tradeBusy}
-              />
-            ))}
-          </div>
+      <div className="up-position-viewport">
+        <div className="up-position-row">
+          {visiblePositions.map(position => (
+            <PositionCard
+              key={position.id}
+              position={position}
+              now={now}
+              onCashOut={onCashOut}
+              tradeBusy={tradeBusy}
+            />
+          ))}
         </div>
-      ) : (
-        <div className="empty-bets-stage" aria-live="polite">
-          <div className="empty-bets-banner">
-            <span className="empty-bets-word">No positions yet</span>
-          </div>
-        </div>
-      )}
+      </div>
     </section>
   );
 }

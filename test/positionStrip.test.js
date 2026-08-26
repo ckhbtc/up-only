@@ -1,5 +1,9 @@
-import { test } from 'node:test';
+import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import react from '@vitejs/plugin-react';
+import { createServer } from 'vite';
 import {
   getPositionDisplay,
   getPositionStripPage,
@@ -13,6 +17,29 @@ const positions = [
   { id: 'b', margin: 3, pnl: 0.7, pnlPct: 23.3 },
   { id: 'c', stake: 5, pnl: 0.1, pnlPct: 2 },
 ];
+
+let vite;
+let PositionStrip;
+
+before(async () => {
+  vite = await createServer({
+    appType: 'custom',
+    configFile: false,
+    plugins: [react()],
+    server: { hmr: false, middlewareMode: true, ws: false },
+  });
+  ({ default: PositionStrip } = await vite.ssrLoadModule('/src/components/PositionStrip.jsx'));
+});
+
+after(async () => {
+  await vite?.close();
+});
+
+test('position strip is hidden when there are no open positions', () => {
+  const markup = renderToStaticMarkup(createElement(PositionStrip, { positions: [] }));
+
+  assert.equal(markup, '');
+});
 
 test('position strip sorts biggest current position value first', () => {
   assert.deepEqual(
