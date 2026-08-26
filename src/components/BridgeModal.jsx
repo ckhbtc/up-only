@@ -182,12 +182,12 @@ export default function BridgeModal({ onClose }) {
   const sourceNetworkLabel = networkLabel(sourceChain.name);
   const injectiveNetworkLabel = networkLabel(INJECTIVE.name);
 
-  let fastFeeLabel = 'Confirmed · quote…';
+  let fastFeeLabel = 'quote…';
   if (fastFeeErr) {
     fastFeeLabel = 'Unavailable';
   } else if (fastFee) {
     if (fastFee.minimumFee === 0) {
-      fastFeeLabel = 'Confirmed · free';
+      fastFeeLabel = 'free';
     } else {
       let amountUnits = 0n;
       try { amountUnits = parseUnits(amount || '0', 6); } catch { /* ignore */ }
@@ -196,9 +196,9 @@ export default function BridgeModal({ onClose }) {
         const usdc = Number(formatUnits(maxFee, 6)).toLocaleString(undefined, {
           maximumFractionDigits: 4,
         });
-        fastFeeLabel = `Confirmed · ≤ ${usdc} USDC`;
+        fastFeeLabel = `≤ ${usdc} USDC`;
       } else {
-        fastFeeLabel = `Confirmed · ${fastFee.minimumFee} bps`;
+        fastFeeLabel = `${fastFee.minimumFee} bps`;
       }
     }
   }
@@ -332,7 +332,7 @@ export default function BridgeModal({ onClose }) {
 
           <div className="up-bridge-speed" role="group" aria-label="Bridge speed">
             {[
-              { id: 'standard', label: 'Standard', sub: 'Finalized · free' },
+              { id: 'standard', label: 'Standard', sub: 'free' },
               { id: 'fast', label: 'Fast', sub: fastFeeLabel },
             ].map((option) => {
               const active = transferMode === option.id;

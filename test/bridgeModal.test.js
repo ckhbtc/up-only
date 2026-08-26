@@ -38,3 +38,10 @@ test('destination token label omits the native qualifier', () => {
 
   assert.doesNotMatch(markup, /USDC \(native\)/i);
 });
+
+test('bridge speed boxes omit finality status words', () => {
+  const markup = renderBridge();
+
+  assert.doesNotMatch(markup, /Finalized|Confirmed/i);
+  assert.match(markup, /<strong>Standard<\/strong><span>free<\/span>/);
+});
