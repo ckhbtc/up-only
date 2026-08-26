@@ -286,7 +286,7 @@ export default function BridgeModal({ onClose }) {
                 )}
               </div>
 
-              <div className="up-bridge-amount-block">
+              <div className="up-bridge-value-block up-bridge-amount-block">
                 <input
                   type="text"
                   inputMode="decimal"
@@ -318,13 +318,15 @@ export default function BridgeModal({ onClose }) {
                 <ChainLogo chainId={INJECTIVE.id} name={INJECTIVE.name} size={22} />
                 <strong>{injectiveNetworkLabel}</strong>
               </div>
-              <div className={`up-bridge-received ${amount ? 'has-amount' : ''}`}>
-                {amount || '-'}
+              <div className="up-bridge-value-block up-bridge-received-block">
+                <div className={`up-bridge-received ${amount ? 'has-amount' : ''}`}>
+                  {amount || '-'}
+                </div>
+                <div className="up-bridge-token-line is-end">
+                  <CoinLogo symbol="USDC" size={14} />
+                  <span>USDC (native)</span>
+                </div>
               </div>
-            </div>
-            <div className="up-bridge-token-line is-end">
-              <CoinLogo symbol="USDC" size={14} />
-              <span>USDC (native)</span>
             </div>
           </div>
 

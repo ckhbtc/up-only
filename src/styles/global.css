@@ -1507,13 +1507,13 @@ input:focus-visible {
 
 .up-bridge-panel-main {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 12px;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.65fr);
 }
 
 .up-chain-picker {
-  flex: 0 0 auto;
+  min-width: 0;
   position: relative;
 }
 
@@ -1618,9 +1618,8 @@ input:focus-visible {
   font-size: 12px;
 }
 
-.up-bridge-amount-block {
+.up-bridge-value-block {
   display: grid;
-  flex: 1;
   justify-items: end;
   min-width: 0;
 }
@@ -1694,10 +1693,12 @@ input:focus-visible {
   font-size: 34px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  max-width: 240px;
+  max-width: 100%;
   overflow: hidden;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
 .up-bridge-received.has-amount {
@@ -2522,7 +2523,7 @@ input:focus-visible {
 
   .up-bridge-panel-main {
     align-items: stretch;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .up-chain-trigger {
@@ -2543,7 +2544,7 @@ input:focus-visible {
 
   .up-bridge-direction + .up-bridge-panel .up-bridge-panel-main {
     align-items: center;
-    flex-direction: row;
+    grid-template-columns: minmax(0, 1fr) minmax(100px, 0.65fr);
   }
 
   .up-bridge-received {
