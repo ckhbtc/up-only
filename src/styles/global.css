@@ -29,6 +29,7 @@
   --blue: #184fe8;
   --blue-grad: linear-gradient(135deg, #184fe8 0%, #00b866 100%);
   --yellow: #ffe24b;
+  --on-yellow: #101014;
   --paper: #fffdf0;
   --overlay: rgba(16, 16, 20, 0.62);
   --font-heading: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
@@ -41,34 +42,35 @@
 }
 
 [data-theme="bauhaus-dark"] {
-  --bg-primary: #0f160e;
-  --bg-secondary: #172414;
-  --bg-card: #fff6d7;
-  --bg-card-hover: #ffe98d;
-  --border: #090807;
-  --border-light: #090807;
-  --text-primary: #130d0b;
-  --text-secondary: #392519;
-  --text-muted: #755a31;
-  --accent: #18d979;
-  --accent-light: #b8ff2c;
-  --accent-dim: rgba(24, 217, 121, 0.2);
-  --accent-grad: linear-gradient(135deg, #b8ff2c 0%, #18d979 100%);
-  --on-accent: #090807;
-  --green: #12bf6c;
-  --green-dim: rgba(18, 191, 108, 0.2);
-  --orange: #ff9e18;
-  --orange-dim: rgba(255, 158, 24, 0.18);
-  --red: #f0322a;
-  --red-dim: rgba(240, 50, 42, 0.16);
-  --blue: #2e5dff;
-  --blue-grad: linear-gradient(135deg, #2e5dff 0%, #18d979 100%);
-  --yellow: #ffe24b;
-  --paper: #fff6d7;
-  --overlay: rgba(5, 4, 4, 0.74);
-  --stamp-bg: #d9ff38;
-  --stamp-fg: #090807;
-  --focus-ring: #d9ff38;
+  --bg-primary: #070c09;
+  --bg-secondary: #0e1711;
+  --bg-card: #18201a;
+  --bg-card-hover: #243027;
+  --border: #050705;
+  --border-light: #3d493f;
+  --text-primary: #f4f7ec;
+  --text-secondary: #c7d0c4;
+  --text-muted: #96a391;
+  --accent: #25cf78;
+  --accent-light: #9fe34a;
+  --accent-dim: rgba(37, 207, 120, 0.2);
+  --accent-grad: linear-gradient(135deg, #9fe34a 0%, #25cf78 100%);
+  --on-accent: #07100a;
+  --green: #21c978;
+  --green-dim: rgba(33, 201, 120, 0.2);
+  --orange: #ff9d32;
+  --orange-dim: rgba(255, 157, 50, 0.18);
+  --red: #ff534a;
+  --red-dim: rgba(255, 83, 74, 0.17);
+  --blue: #5376f5;
+  --blue-grad: linear-gradient(135deg, #5376f5 0%, #25cf78 100%);
+  --yellow: #e4c94f;
+  --on-yellow: #0c100d;
+  --paper: #101612;
+  --overlay: rgba(2, 4, 3, 0.82);
+  --stamp-bg: #9fe34a;
+  --stamp-fg: #050705;
+  --focus-ring: #9fe34a;
 }
 
 html,
@@ -283,7 +285,7 @@ input:focus-visible {
   background: transparent;
   border: 0;
   border-radius: 5px;
-  color: var(--text-primary);
+  color: var(--on-yellow);
   display: inline-flex;
   font-family: var(--font-heading);
   font-size: 17px;
@@ -430,7 +432,7 @@ input:focus-visible {
 .up-search-dropdown-head {
   background: var(--yellow);
   border-bottom: 4px solid var(--border);
-  color: var(--text-primary);
+  color: var(--on-yellow);
   gap: 12px;
   letter-spacing: 1.5px;
   padding: 7px 12px;
@@ -443,7 +445,7 @@ input:focus-visible {
 }
 
 .up-search-dropdown-head span:last-child {
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--on-yellow) 68%, transparent);
   flex: 0 0 auto;
 }
 
@@ -476,6 +478,14 @@ input:focus-visible {
 .up-search-result.is-active {
   background: var(--accent-light);
   border-bottom: 3px solid var(--border);
+  color: var(--border);
+}
+
+.up-search-result:hover .up-search-result-name span,
+.up-search-result:hover .up-search-result-price span,
+.up-search-result.is-active .up-search-result-name span,
+.up-search-result.is-active .up-search-result-price span {
+  color: color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .up-search-result-name,
@@ -742,6 +752,7 @@ input:focus-visible {
 .wallet-menu-item:hover,
 .wallet-menu-item:focus {
   background: var(--accent-light);
+  color: var(--border);
   outline: none;
 }
 
@@ -1025,6 +1036,7 @@ input:focus-visible {
   align-self: stretch;
   background: var(--yellow);
   border-right: 4px solid var(--border);
+  color: var(--on-yellow);
   display: flex;
   font-family: var(--font-heading);
   font-size: 28px;
@@ -1401,6 +1413,11 @@ input:focus-visible {
   text-transform: uppercase;
 }
 
+.up-bridge-header .up-bridge-kicker,
+.up-bridge-header .up-bridge-label-row {
+  color: color-mix(in srgb, var(--on-yellow) 70%, transparent);
+}
+
 .up-bridge-kicker {
   color: var(--text-secondary);
   letter-spacing: 2.5px;
@@ -1408,7 +1425,7 @@ input:focus-visible {
 }
 
 .up-bridge-header h2 {
-  color: var(--text-primary);
+  color: var(--on-yellow);
   font-size: 28px;
   line-height: 1;
 }
@@ -1574,6 +1591,12 @@ input:focus-visible {
 .up-chain-option:hover,
 .up-chain-option.is-active {
   background: var(--accent-light);
+  color: var(--border);
+}
+
+.up-chain-option:hover .up-chain-selected,
+.up-chain-option.is-active .up-chain-selected {
+  color: var(--border);
 }
 
 .up-chain-selected {
@@ -1694,7 +1717,7 @@ input:focus-visible {
 .up-bridge-speed button.is-active {
   background: var(--accent-light);
   box-shadow: 3px 3px 0 var(--border);
-  color: var(--text-primary);
+  color: var(--border);
 }
 
 .up-bridge-speed button:disabled {
