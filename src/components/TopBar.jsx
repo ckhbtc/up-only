@@ -34,8 +34,6 @@ function SearchIcon() {
 }
 
 export default function TopBar({
-  onNavigate,
-  currentView,
   theme,
   onSetTheme,
   searchOpen,
@@ -69,24 +67,18 @@ export default function TopBar({
   return (
     <header className="up-shell-head">
       <div className="up-header">
-        <button type="button" className="up-logo" onClick={() => onNavigate('home')} aria-label="UpOnly home">
+        <button type="button" className="up-logo" onClick={onCloseSearch} aria-label="UpOnly home">
           <img className="up-logo-image" src="/up-only-logo.png" alt="" width={78} height={78} />
         </button>
 
         <nav className="up-tabs" aria-label="Primary">
-          {[
-            { id: 'home', label: 'Pairs' },
-            { id: 'bets', label: 'Positions' },
-          ].map(item => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
-              className={`up-tab ${currentView === item.id ? 'is-active' : ''}`}
-            >
-              {item.label}
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={onCloseSearch}
+            className={`up-tab ${searchOpen ? '' : 'is-active'}`}
+          >
+            Pairs
+          </button>
           <button
             type="button"
             onClick={onOpenSearch}

@@ -8,7 +8,7 @@ const readInitialTheme = () => {
 };
 import TopBar from './components/TopBar';
 import MarketCard from './components/MarketCard';
-import ActiveBets from './components/ActiveBets';
+import PositionStrip from './components/PositionStrip';
 import AuthZSetup from './components/AuthZSetup';
 import BridgeModal from './components/BridgeModal';
 import Confetti from './components/Confetti';
@@ -80,7 +80,6 @@ function buildOptimisticOpenPosition(bet) {
 }
 
 export default function App() {
-  const [view, setView] = useState('home');
   const [txStatus, setTxStatus] = useState(null); // { type: 'loading'|'success'|'warning'|'error', message, txHash? }
   const [confetti, setConfetti] = useState(false);
   const [showBridge, setShowBridge] = useState(false);
@@ -146,12 +145,6 @@ export default function App() {
   const searchMatches = useMemo(() => (
     marketsMatchingSearch(sortedMarkets, searchQuery)
   ), [sortedMarkets, searchQuery]);
-  const searchMatchedMarketIds = useMemo(() => new Set(
-    searchMatches.map(market => market.marketId ?? market.id)
-  ), [searchMatches]);
-  const firstSearchMatchId = searchMatches.length
-    ? (searchMatches[0].marketId ?? searchMatches[0].id)
-    : null;
 
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
@@ -169,7 +162,6 @@ export default function App() {
   }, []);
 
   const openSearch = useCallback(() => {
-    setView('home');
     setSearchOpen(true);
   }, []);
 
@@ -199,20 +191,6 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [openSearch]);
-
-  useEffect(() => {
-    if (view !== 'home' || !searchQuery.trim() || firstSearchMatchId == null) return undefined;
-
-    const timer = window.setTimeout(() => {
-      marketCardRefs.current.get(firstSearchMatchId)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'nearest',
-      });
-    }, 120);
-
-    return () => window.clearTimeout(timer);
-  }, [view, searchQuery, firstSearchMatchId]);
 
   const needsAuthorization = connected && injAddress && !session.rfqReady;
 
@@ -248,9 +226,9 @@ export default function App() {
       return;
     }
 
-    if (view !== 'home' || authDismissedFor === injAddress) return;
+    if (authDismissedFor === injAddress) return;
     setShowAuthModal(true);
-  }, [connected, injAddress, needsAuthorization, view, authDismissedFor]);
+  }, [connected, injAddress, needsAuthorization, authDismissedFor]);
 
   // Re-validate the session token against the currently-connected wallet.
   // Prevents a stale sessionToken (bound to a prior granter) from being
@@ -267,7 +245,7 @@ export default function App() {
   }, [connected, injAddress, session.rfqReady]);
 
   useEffect(() => {
-    if (!connected || !injAddress || !session.rfqReady || view !== 'bets' || !visiblePositions.length) return;
+    if (!connected || !injAddress || !session.rfqReady || !visiblePositions.length) return;
 
     let cancelled = false;
     const sendCashOutPrequotes = async () => {
@@ -305,7 +283,7 @@ export default function App() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [connected, injAddress, session.rfqReady, view, visiblePositions]);
+  }, [connected, injAddress, session.rfqReady, visiblePositions]);
 
   // Start polling when wallet connects
   useEffect(() => {
@@ -590,8 +568,6 @@ export default function App() {
   return (
     <>
       <TopBar
-        onNavigate={setView}
-        currentView={view}
         theme={theme}
         onSetTheme={setThemeTo}
         searchOpen={searchOpen}
@@ -611,71 +587,60 @@ export default function App() {
       <TransactionStatus status={txStatus} />
 
       <div className="up-page">
-        {/* Main content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {view === 'home' && (
-            <>
-              {connected && session.active && !session.rfqReady && (
-                <div className="up-inline-auth">
-                  <span>RFQ autosign needs a fresh authorization before orders can leave the lot.</span>
-                  <button type="button" onClick={handleAuthorizeWallet} disabled={session.granting}>
-                    {session.granting ? 'Authorizing...' : 'Authorize Wallet'}
-                  </button>
-                </div>
-              )}
-              <div className="up-market-grid">
-                {sortedMarkets.map(market => {
-                  const marketRefId = market.marketId ?? market.id;
-                  return (
-                    <MarketCard
-                      key={market.id}
-                      cardRef={node => setMarketCardRef(marketRefId, node)}
-                      market={market}
-                      balance={usdcBalance}
-                      requestAddress={injAddress}
-                      connected={connected}
-                      connecting={connecting}
-                      rfqReady={session.rfqReady}
-                      authorizing={session.granting}
-                      opened={Boolean(openedCards[market.marketId])}
-                      opening={Boolean(openingCards[market.marketId])}
-                      searchHighlighted={searchMatchedMarketIds.has(marketRefId)}
-                      tradeBusy={tradeBusy}
-                      error={cardErrors[market.marketId]}
-                      onConnect={connect}
-                      onAuthorize={handleAuthorizeWallet}
-                      onConfirm={handleCardConfirm}
-                    />
-                  );
-                })}
-              </div>
-              {markets.length === 0 && !loading && (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-                  {connected ? 'No markets available' : 'Connect your wallet to see live markets'}
-                </div>
-              )}
-            </>
+        <main style={{ flex: 1, minWidth: 0 }}>
+          {connected && session.active && !session.rfqReady && (
+            <div className="up-inline-auth">
+              <span>RFQ autosign needs a fresh authorization before orders can leave the lot.</span>
+              <button type="button" onClick={handleAuthorizeWallet} disabled={session.granting}>
+                {session.granting ? 'Authorizing...' : 'Authorize Wallet'}
+              </button>
+            </div>
           )}
 
-          {view === 'bets' && (
-            <>
-              {connected ? (
-                <ActiveBets
-                  bets={visiblePositions}
-                  onCashOut={handleCashOut}
-                  onCashOutAll={handleCashOutAll}
-                  devMode={devMode}
+          <PositionStrip
+            positions={visiblePositions}
+            onCashOut={handleCashOut}
+            onCashOutAll={handleCashOutAll}
+            devMode={devMode}
+            tradeBusy={tradeBusy}
+          />
+
+          <div className="up-market-heading up-section-title-row">
+            <h2>Available pairs</h2>
+            <span>hottest first</span>
+          </div>
+
+          <div className="up-market-grid">
+            {sortedMarkets.map(market => {
+              const marketRefId = market.marketId ?? market.id;
+              return (
+                <MarketCard
+                  key={market.id}
+                  cardRef={node => setMarketCardRef(marketRefId, node)}
+                  market={market}
+                  balance={usdcBalance}
+                  requestAddress={injAddress}
+                  connected={connected}
+                  connecting={connecting}
+                  rfqReady={session.rfqReady}
+                  authorizing={session.granting}
+                  opened={Boolean(openedCards[market.marketId])}
+                  opening={Boolean(openingCards[market.marketId])}
                   tradeBusy={tradeBusy}
+                  error={cardErrors[market.marketId]}
+                  onConnect={connect}
+                  onAuthorize={handleAuthorizeWallet}
+                  onConfirm={handleCardConfirm}
                 />
-              ) : (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: 14 }}>
-                  Connect wallet to see your positions.
-                </div>
-              )}
-            </>
+              );
+            })}
+          </div>
+          {markets.length === 0 && !loading && (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+              {connected ? 'No markets available' : 'Connect your wallet to see live markets'}
+            </div>
           )}
-
-        </div>
+        </main>
       </div>
 
       {showBridge && <BridgeModal onClose={() => setShowBridge(false)} />}

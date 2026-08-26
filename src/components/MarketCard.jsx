@@ -24,7 +24,6 @@ export default function MarketCard({
   authorizing = false,
   opened = false,
   opening = false,
-  searchHighlighted = false,
   tradeBusy = false,
   error = '',
   onConnect,
@@ -147,7 +146,7 @@ export default function MarketCard({
   return (
     <article
       ref={cardRef}
-      className={`up-card ${searchHighlighted ? 'is-search-match' : ''}`}
+      className="up-card"
     >
       <div className="up-hot-ribbon">NO SHORTS - NO SLIDERS - MAX ONLY</div>
 
