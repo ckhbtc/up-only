@@ -45,6 +45,7 @@ function PositionCard({ position, now, onCashOut, tradeBusy }) {
     : status.label;
   const priceDecimals = position.market?.priceDecimals;
   const markPrice = Number(position.markPrice || position.currentPrice);
+  const markPriceLabel = formatPrice(markPrice, priceDecimals);
   const entryPrice = Number(position.entryPrice);
   const liqPrice = derivePositionLiqPrice(position);
   const cushionRatio = liquidationCushionRatio({
@@ -85,7 +86,8 @@ function PositionCard({ position, now, onCashOut, tradeBusy }) {
         <div className="up-position-price-row">
           <span>${formatPrice(getPositionMargin(position))} in</span>
           <span>
-            {formatPrice(entryPrice, priceDecimals)} → {formatPrice(markPrice, priceDecimals)}
+            {formatPrice(entryPrice, priceDecimals)} →{' '}
+            <span key={markPriceLabel} className="up-live-mark-price">{markPriceLabel}</span>
           </span>
         </div>
 

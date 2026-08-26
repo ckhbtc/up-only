@@ -204,6 +204,19 @@ input[type="number"] {
   100% { opacity: 1; transform: scale(1) rotate(-9deg); }
 }
 
+@keyframes up-live-mark-tick {
+  0% {
+    background: var(--green);
+    color: #fff;
+    transform: translateY(-1px) scale(1.08);
+  }
+  100% {
+    background: transparent;
+    color: inherit;
+    transform: translateY(0) scale(1);
+  }
+}
+
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid var(--focus-ring);
@@ -2047,6 +2060,14 @@ input:focus-visible {
   align-items: center;
   display: flex;
   justify-content: space-between;
+}
+
+.up-live-mark-price {
+  animation: up-live-mark-tick 700ms ease-out both;
+  border-radius: 3px;
+  display: inline-block;
+  padding: 0 2px;
+  transform-origin: center;
 }
 
 .up-position-asset {

@@ -41,6 +41,28 @@ test('position strip is hidden when there are no open positions', () => {
   assert.equal(markup, '');
 });
 
+test('position strip marks the live price for update feedback', () => {
+  const markup = renderToStaticMarkup(createElement(PositionStrip, {
+    positions: [{
+      id: 'btc-long',
+      asset: 'BTC',
+      side: 'long',
+      direction: 'long',
+      entryPrice: 100,
+      markPrice: 105,
+      currentPrice: 105,
+      quantity: 0.2,
+      margin: 10,
+      pnl: 1,
+      pnlPct: 10,
+      market: { priceDecimals: 2 },
+    }],
+    onCashOut: () => {},
+  }));
+
+  assert.match(markup, /class="up-live-mark-price">105\.00</);
+});
+
 test('position strip sorts biggest current position value first', () => {
   assert.deepEqual(
     sortPositionsByValue(positions, 1_000).map(position => position.id),
