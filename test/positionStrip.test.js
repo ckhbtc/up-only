@@ -8,6 +8,7 @@ import { createServer } from 'vite';
 import {
   getPositionDisplay,
   getPositionLeverage,
+  getPositionLeverageLabel,
   getPositionStripPage,
   getPositionStripTotals,
   getPositionValue,
@@ -55,7 +56,7 @@ test('position strip marks the live price for update feedback', () => {
       currentPrice: 105,
       quantity: 0.2,
       margin: 10,
-      leverage: 10,
+      leverage: 9.9,
       pnl: 1,
       pnlPct: 10,
       market: { priceDecimals: 2 },
@@ -89,6 +90,16 @@ test('position leverage prefers the recorded value and derives indexed positions
   assert.equal(getPositionLeverage({ leverage: 10, entryPrice: 100, quantity: 0.2, margin: 10 }), 10);
   assert.equal(getPositionLeverage({ entryPrice: 100, quantity: 0.2, margin: 10 }), 2);
   assert.equal(getPositionLeverage({ entryPrice: 100, quantity: 0.2, margin: 0 }), null);
+});
+
+test('position leverage labels snap margin-rounded values to max leverage presets', () => {
+  assert.equal(getPositionLeverageLabel({ leverage: 4.7 }), '5x');
+  assert.equal(getPositionLeverageLabel({ leverage: 9.9 }), '10x');
+  assert.equal(getPositionLeverageLabel({ entryPrice: 99, quantity: 1, margin: 10 }), '10x');
+  assert.equal(getPositionLeverageLabel({ leverage: 24.6 }), '25x');
+  assert.equal(getPositionLeverageLabel({ leverage: 48.2 }), '50x');
+  assert.equal(getPositionLeverageLabel({ leverage: 98 }), '100x');
+  assert.equal(getPositionLeverageLabel({ leverage: 0 }), null);
 });
 
 test('position strip sorts biggest current position value first', () => {

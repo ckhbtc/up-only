@@ -1,3 +1,5 @@
+import { STANDARD_MAX_LEVERAGE_STEPS } from './leverageLimits.js';
+
 const numberOrZero = value => Number(value) || 0;
 
 export function getPositionDisplay(position, now = Date.now()) {
@@ -24,6 +26,16 @@ export function getPositionLeverage(position) {
 
   const leverage = (entryPrice * quantity) / margin;
   return Number.isFinite(leverage) && leverage > 0 ? leverage : null;
+}
+
+export function getPositionLeverageLabel(position) {
+  const leverage = getPositionLeverage(position);
+  if (!leverage) return null;
+
+  const nearestPreset = STANDARD_MAX_LEVERAGE_STEPS.reduce((nearest, preset) => (
+    Math.abs(preset - leverage) < Math.abs(nearest - leverage) ? preset : nearest
+  ));
+  return `${nearestPreset}x`;
 }
 
 export function getPositionValue(position, now = Date.now()) {

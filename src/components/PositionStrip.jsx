@@ -7,7 +7,7 @@ import {
 } from '../services/liquidationRisk';
 import {
   getPositionDisplay,
-  getPositionLeverage,
+  getPositionLeverageLabel,
   getPositionMargin,
   getPositionStripPage,
   getPositionStripTotals,
@@ -30,16 +30,6 @@ function plainDollar(value) {
   return `${number < 0 ? '-' : ''}$${Math.abs(number).toFixed(2)}`;
 }
 
-function positionLeverageLabel(position) {
-  const leverage = getPositionLeverage(position);
-  if (!leverage) return null;
-  const nearestInteger = Math.round(leverage);
-  const label = Math.abs(leverage - nearestInteger) < 0.05
-    ? String(nearestInteger)
-    : leverage.toFixed(1);
-  return `${label}x`;
-}
-
 function PositionCard({ position, now, onCashOut, tradeBusy }) {
   const display = getPositionDisplay(position, now);
   const isPositive = display.inOpenPnlGrace || display.pnl >= 0;
@@ -58,7 +48,7 @@ function PositionCard({ position, now, onCashOut, tradeBusy }) {
   const markPrice = Number(position.markPrice || position.currentPrice);
   const markPriceLabel = formatPrice(markPrice, priceDecimals);
   const entryPrice = Number(position.entryPrice);
-  const leverageLabel = positionLeverageLabel(position);
+  const leverageLabel = getPositionLeverageLabel(position);
   const liqPrice = derivePositionLiqPrice(position);
   const cushionRatio = liquidationCushionRatio({
     entryPrice,
