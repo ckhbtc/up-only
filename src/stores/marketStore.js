@@ -13,6 +13,10 @@ import {
   positionPollingActions,
 } from '../services/livePositionPrices';
 import {
+  applyLiveMarketPrice,
+  subscribeLiveMarketPrices,
+} from '../services/liveMarketPrices';
+import {
   applyOptimisticCloses,
   mergeFetchedAndOptimisticPositions,
   pruneOptimisticCloses,
@@ -134,11 +138,13 @@ async function fetchDisplayPrices(markets) {
 const useMarketStore = create((set, get) => ({
   markets: [],
   prices: {},
+  livePrices: {},
   positions: [],
   optimisticClosedPositions: {},
   loading: false,
   error: null,
   pollInterval: null,
+  markPriceSubscription: null,
 
   fetchMarkets: async () => {
     set({ loading: true });
@@ -175,13 +181,20 @@ const useMarketStore = create((set, get) => ({
         };
       });
 
-      set(state => ({
-        markets: uiMarkets,
-        prices,
-        positions: enrichPositionsWithMarketMetadata(state.positions, uiMarkets),
-        loading: false,
-        error: null,
-      }));
+      set(state => {
+        const nextMarkets = uiMarkets.map(market => (
+          state.livePrices[market.marketId]
+            ? { ...market, price: state.livePrices[market.marketId] }
+            : market
+        ));
+        return {
+          markets: nextMarkets,
+          prices: { ...prices, ...state.livePrices },
+          positions: enrichPositionsWithMarketMetadata(state.positions, nextMarkets),
+          loading: false,
+          error: null,
+        };
+      });
     } catch (err) {
       set({ loading: false, error: err.message });
       console.error('Failed to fetch markets:', err);
@@ -266,12 +279,12 @@ const useMarketStore = create((set, get) => ({
     try {
       const { prices, summaries } = await fetchDisplayPrices(markets);
       set(state => ({
-        prices,
+        prices: { ...prices, ...state.livePrices },
         markets: state.markets.map(m => {
           const summary = summaries[m.marketId];
           return {
             ...m,
-            price: prices[m.marketId] || m.price,
+            price: state.livePrices[m.marketId] || prices[m.marketId] || m.price,
             change24h: summary?.change24hPct ?? m.change24h,
           };
         }),
@@ -322,6 +335,35 @@ const useMarketStore = create((set, get) => ({
       clearInterval(pollInterval);
       set({ pollInterval: null });
     }
+  },
+
+  startMarketPriceStream: () => {
+    const marketIds = get().markets.map(market => market.marketId).filter(Boolean);
+    if (marketIds.length === 0) return;
+
+    get().markPriceSubscription?.();
+    let stopped = false;
+    const unsubscribe = subscribeLiveMarketPrices({
+      marketIds,
+      onPrice: update => set(state => applyLiveMarketPrice(state, update)),
+      onEnd: () => {
+        if (!stopped) set({ markPriceSubscription: null, livePrices: {} });
+      },
+      onStatus: status => {
+        if (status?.code) console.warn('Market mark price stream status:', status);
+      },
+    });
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      unsubscribe();
+    };
+    set({ markPriceSubscription: stop });
+  },
+
+  stopMarketPriceStream: () => {
+    get().markPriceSubscription?.();
+    set({ markPriceSubscription: null });
   },
 }));
 

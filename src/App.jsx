@@ -26,6 +26,7 @@ import { sortMarketsForUpOnly } from './services/marketSort';
 import { shouldOpenPairSearch } from './services/pairSearchShortcut';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
+import { startWalletBalanceRefresh } from './services/walletRefresh';
 import useWalletStore from './stores/walletStore';
 import useMarketStore from './stores/marketStore';
 import useSessionStore from './stores/sessionStore';
@@ -139,10 +140,19 @@ export default function App() {
   }, []);
 
   const { connected, connecting, injAddress, ethAddress, usdcBalance, connect, refreshBalances } = useWalletStore();
-  const { markets, positions, loading, startPolling, stopPolling } = useMarketStore();
+  const {
+    markets,
+    positions,
+    loading,
+    startPolling,
+    stopPolling,
+    startMarketPriceStream,
+    stopMarketPriceStream,
+  } = useMarketStore();
   const session = useSessionStore();
   const visiblePositions = useMemo(() => positions.filter(isUpOnlyPosition), [positions]);
   const sortedMarkets = useMemo(() => sortMarketsForUpOnly(markets), [markets]);
+  const marketIdsKey = useMemo(() => markets.map(market => market.marketId).join(','), [markets]);
   const searchMatches = useMemo(() => (
     marketsMatchingSearch(sortedMarkets, searchQuery)
   ), [sortedMarkets, searchQuery]);
@@ -302,6 +312,17 @@ export default function App() {
       return () => stopPolling();
     }
   }, [connected, injAddress, startPolling, stopPolling]);
+
+  useEffect(() => {
+    if (!connected || !injAddress) return undefined;
+    return startWalletBalanceRefresh({ refreshBalances });
+  }, [connected, injAddress, refreshBalances]);
+
+  useEffect(() => {
+    if (!marketIdsKey) return undefined;
+    startMarketPriceStream();
+    return () => stopMarketPriceStream();
+  }, [marketIdsKey, startMarketPriceStream, stopMarketPriceStream]);
 
   const markCardOpened = useCallback((marketId) => {
     setOpenedCards(state => ({ ...state, [marketId]: true }));
