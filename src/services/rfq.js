@@ -417,13 +417,15 @@ async function resolveRfqMarket({ marketId, providedMarket = null, timing = null
   return market;
 }
 
-async function resolveRfqOraclePrice({
+export async function resolveRfqOraclePrice({
   market,
   providedOraclePrice = null,
   timing = null,
+  requireFresh = false,
+  fetchPrice = fetchOraclePriceForMarket,
 }) {
   const cachedPrice = normalizePositiveDecimal(providedOraclePrice);
-  if (cachedPrice) {
+  if (cachedPrice && !requireFresh) {
     markRfqTiming(timing, 'preflight.oracle.cached', {
       oraclePrice: cachedPrice.toFixed(),
     });
@@ -432,7 +434,7 @@ async function resolveRfqOraclePrice({
 
   const started = timingNow();
   markRfqTiming(timing, 'preflight.oracle.start');
-  const oraclePrice = await fetchOraclePriceForMarket(market);
+  const oraclePrice = await fetchPrice(market);
   markRfqTiming(timing, 'preflight.oracle.end', {
     source: 'network',
     oracleMs: roundMs(timingNow() - started),
@@ -1498,6 +1500,9 @@ export async function executeRfqGatewayAutoSign({
   marketId,
   input,
   onProgress = null,
+  reviewPrepared = null,
+  accountDetailsLookup = getRfqAccountDetailsForPrepare,
+  broadcastPrepared = broadcastPreparedRfqAutoSign,
   gatewayApi = rfqGatewayApi,
   txApiClient = txApi,
   relayBroadcast = relaySignedRfqTxRaw,
@@ -1517,16 +1522,17 @@ export async function executeRfqGatewayAutoSign({
     markRfqTiming(activeTiming, 'account.fetch.start', {
       autosignAddress,
     });
-    const accountLookup = await getRfqAccountDetailsForPrepare(autosignAddress);
+    const accountLookup = await accountDetailsLookup(autosignAddress);
     const accountDetails = accountLookup.accountDetails;
     markRfqTiming(activeTiming, 'account.fetch.end', {
       source: accountLookup.source,
       accountFound: Boolean(accountDetails?.baseAccount),
       sequence: accountDetails?.baseAccount?.sequence ?? null,
     });
-    const request = buildRfqGatewayPrepareRequest({
+    let currentInput = { ...input };
+    let request = buildRfqGatewayPrepareRequest({
       session,
-      input,
+      input: currentInput,
       marketId,
       accountDetails,
     });
@@ -1560,6 +1566,29 @@ export async function executeRfqGatewayAutoSign({
         throw new Error('No executable RFQ quote returned. RFQ gateway selected 0 quote(s).');
       }
 
+      const preparedReview = reviewPrepared
+        ? await reviewPrepared({ prepared, input: currentInput, attempt })
+        : null;
+      if (preparedReview?.input) {
+        markRfqTiming(activeTiming, 'prepare.margin_retry', {
+          attempt,
+          ...preparedReview.details,
+        });
+        if (attempt >= maxPrepareAttempts) {
+          throw new Error('RFQ quote moved beyond safe margin. Try again.');
+        }
+        currentInput = preparedReview.input;
+        request = buildRfqGatewayPrepareRequest({
+          session,
+          input: currentInput,
+          marketId,
+          accountDetails,
+        });
+        prepared = null;
+        await sleep(RFQ_PREPARE_RETRY_DELAY_MS);
+        continue;
+      }
+
       try {
         assertPreparedQuoteFreshness(prepared, { minTtlMs: minQuoteTtlMs });
         lastFreshnessError = null;
@@ -1582,10 +1611,11 @@ export async function executeRfqGatewayAutoSign({
     }
     markRfqTiming(activeTiming, 'matched', {
       prepared: compactPrepared(prepared),
+      quantity: currentInput.quantity,
     });
-    onProgress?.({ phase: 'matched', prepared });
+    onProgress?.({ phase: 'matched', prepared, input: currentInput });
 
-    const result = await broadcastPreparedRfqAutoSign({
+    const result = await broadcastPrepared({
       prepared,
       session,
       txApiClient,
@@ -1602,7 +1632,7 @@ export async function executeRfqGatewayAutoSign({
         sequence: nextSequence,
       });
     }
-    onProgress?.({ phase: 'confirmed', prepared, result });
+    onProgress?.({ phase: 'confirmed', prepared, result, input: currentInput });
 
     if (ownsTiming) {
       flushRfqTiming(activeTiming, 'success', {
@@ -1615,6 +1645,7 @@ export async function executeRfqGatewayAutoSign({
     return {
       ...result,
       prepared,
+      input: currentInput,
     };
   } catch (err) {
     markRfqTiming(activeTiming, 'error', { message: err.message });
@@ -1679,6 +1710,70 @@ export function buildRfqOrderInput({ market, oraclePrice, side, stakeUsdt, lever
   };
 }
 
+const RFQ_MARK_MARGIN_SAFETY_MULTIPLIER = new Decimal('1.05');
+
+function preparedExecutionPrice(prepared, direction) {
+  const prices = (prepared?.quotes || [])
+    .map(quote => normalizePositiveDecimal(quote?.price))
+    .filter(Boolean);
+  if (!prices.length) return null;
+  return direction === 'short'
+    ? Decimal.min(...prices)
+    : Decimal.max(...prices);
+}
+
+export function buildMarkSafeRfqRetryInput({
+  market,
+  input,
+  prepared,
+  markPrice,
+  safetyMultiplier = RFQ_MARK_MARGIN_SAFETY_MULTIPLIER,
+}) {
+  const mark = normalizePositiveDecimal(markPrice);
+  const executionPrice = preparedExecutionPrice(prepared, input?.direction);
+  if (!mark || !executionPrice) return null;
+
+  const margin = new Decimal(input.margin);
+  const quantity = new Decimal(input.quantity);
+  const imr = new Decimal(market?.initialMarginRatio ?? DEFAULT_INITIAL_MARGIN_RATIO);
+  const buffer = new Decimal(safetyMultiplier);
+  const requiredMarginPerUnit = input.direction === 'short'
+    ? mark.mul(imr.plus(1)).minus(executionPrice)
+    : executionPrice.minus(mark.mul(new Decimal(1).minus(imr)));
+
+  if (!requiredMarginPerUnit.isFinite() || requiredMarginPerUnit.lte(0)) return null;
+
+  const requiredMargin = quantity.mul(requiredMarginPerUnit);
+  const bufferedRequiredMargin = requiredMargin.mul(buffer);
+  if (margin.gte(bufferedRequiredMargin)) return null;
+
+  const safeQuantity = quantizeDecimal(
+    margin.div(requiredMarginPerUnit.mul(buffer)),
+    market.minQuantityTickSize,
+    Decimal.ROUND_FLOOR
+  );
+  if (new Decimal(safeQuantity).lte(0)) {
+    throw new Error('Quantity rounds to zero after the RFQ margin safety check');
+  }
+  if (new Decimal(safeQuantity).gte(quantity)) return null;
+
+  return {
+    input: {
+      ...input,
+      quantity: safeQuantity,
+    },
+    details: {
+      previousQuantity: canonicalDecimal(quantity),
+      safeQuantity,
+      markPrice: canonicalDecimal(mark),
+      executionPrice: canonicalDecimal(executionPrice),
+      requiredMargin: canonicalDecimal(requiredMargin),
+      bufferedRequiredMargin: canonicalDecimal(bufferedRequiredMargin),
+      safetyMultiplier: canonicalDecimal(buffer),
+    },
+  };
+}
+
 export function buildRfqCloseInput({ market, oraclePrice, side, quantity, slippage = 0.02 }) {
   const direction = side === 'long' ? 'short' : 'long';
   const price = new Decimal(oraclePrice);
@@ -1738,6 +1833,7 @@ export async function tradeOpenRfq({
       market,
       providedOraclePrice,
       timing,
+      requireFresh: true,
     });
     const input = buildRfqOrderInput({ market, oraclePrice, side, stakeUsdt, leverage, slippage });
     const marginCheckPrice = initialMarginCheckPrice({
@@ -1768,7 +1864,21 @@ export async function tradeOpenRfq({
       input,
       onProgress,
       timing,
+      reviewPrepared: async ({ prepared, input: preparedInput }) => {
+        const freshMarkPrice = await resolveRfqOraclePrice({
+          market,
+          timing,
+          requireFresh: true,
+        });
+        return buildMarkSafeRfqRetryInput({
+          market,
+          input: preparedInput,
+          prepared,
+          markPrice: freshMarkPrice,
+        });
+      },
     });
+    const executedInput = openResult.input || input;
 
     let takeProfit = tpPrice && Number(tpPrice) > 0
       ? { requested: true, placed: false, error: null }
@@ -1782,7 +1892,7 @@ export async function tradeOpenRfq({
           session,
           market,
           side,
-          quantity: input.quantity,
+          quantity: executedInput.quantity,
           triggerPrice: tpPrice,
         });
         takeProfit = tpResult;

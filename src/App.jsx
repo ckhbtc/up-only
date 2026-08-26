@@ -44,12 +44,12 @@ function latestCachedPrice(marketId, fallback = null) {
     || fallback;
 }
 
-function buildOptimisticOpenPosition(bet) {
+function buildOptimisticOpenPosition(bet, executionInput = null) {
   const side = UP_ONLY_SIDE;
   const entryPrice = latestCachedPrice(bet.market.marketId, bet.market.price) || bet.market.price || 0;
-  const quantity = entryPrice > 0
+  const quantity = executionInput?.quantity || (entryPrice > 0
     ? String((Number(bet.stake) * Number(bet.leverage)) / entryPrice)
-    : '0';
+    : '0');
 
   return {
     id: `${bet.market.marketId}_${side}`,
@@ -353,10 +353,10 @@ export default function App() {
     let openMatched = false;
     let optimisticPositionId = null;
 
-    const showOptimisticOpen = () => {
+    const showOptimisticOpen = (executionInput = null) => {
       if (openMatched) return;
       openMatched = true;
-      const optimisticPosition = buildOptimisticOpenPosition(bet);
+      const optimisticPosition = buildOptimisticOpenPosition(bet, executionInput);
       optimisticPositionId = optimisticPosition.id;
       useMarketStore.getState().addOptimisticPosition(optimisticPosition);
       setTxStatus(null);
@@ -366,7 +366,7 @@ export default function App() {
     const settleOpenConfirmed = (result) => {
       if (openConfirmed) return;
       openConfirmed = true;
-      if (!openMatched) showOptimisticOpen();
+      if (!openMatched) showOptimisticOpen(result?.input);
       if (optimisticPositionId) {
         useMarketStore.getState().updateOptimisticPosition(optimisticPositionId, {
           optimisticConfirmed: true,
@@ -400,10 +400,9 @@ export default function App() {
         leverage: bet.leverage,
         tpPrice: bet.targetPrice,
         market: bet.market,
-        oraclePrice: latestCachedPrice(bet.market.marketId, bet.market.price),
-        onProgress: ({ phase, result: progressResult }) => {
+        onProgress: ({ phase, result: progressResult, input: progressInput }) => {
           if (phase === 'matched') {
-            showOptimisticOpen();
+            showOptimisticOpen(progressInput);
           }
           if (phase === 'confirmed') {
             settleOpenConfirmed(progressResult);

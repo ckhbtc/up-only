@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import Decimal from 'decimal.js';
 import {
   CosmosTxV1Beta1TxPb,
   PrivateKey,
@@ -14,13 +15,16 @@ import {
   buildAcceptQuoteMessage,
   buildRfqCloseInput,
   buildRfqGatewayPrepareRequest,
+  buildMarkSafeRfqRetryInput,
   buildRfqQuoteResult,
   buildRfqOrderInput,
+  executeRfqGatewayAutoSign,
   getRfqQuoteRejectReason,
   getPreparedQuoteExpiryReport,
   getPreparedTxSignatureIndexes,
   normalizeRfqQuoteForContract,
   requestRfqQuotes,
+  resolveRfqOraclePrice,
   selectRfqQuotesForAccept,
   signPreparedAutoSignTxRaw,
   signatureHexToBytes,
@@ -301,6 +305,62 @@ test('buildRfqOrderInput caps short max-leverage quantity above oracle for margi
   );
 });
 
+test('buildMarkSafeRfqRetryInput resizes the latest failed BTC quote below the chain threshold', () => {
+  const btcMarket = {
+    ...market,
+    symbol: 'BTC',
+    initialMarginRatio: '0.019231',
+    minQuantityTickSize: '0.00001',
+  };
+  const markPrice = new Decimal('78849.413570072425047248');
+  const quotePrice = new Decimal('79002');
+  const initialInput = {
+    direction: 'long',
+    margin: '5',
+    quantity: '0.00314',
+    worstPrice: '80313',
+  };
+
+  const retry = buildMarkSafeRfqRetryInput({
+    market: btcMarket,
+    input: initialInput,
+    prepared: { quotes: [{ price: quotePrice.toFixed() }] },
+    markPrice,
+  });
+
+  assert.equal(retry.input.quantity, '0.00285');
+  assert.equal(retry.details.previousQuantity, '0.00314');
+  assert.equal(retry.details.executionPrice, '79002');
+
+  const quantity = new Decimal(retry.input.quantity);
+  const threshold = new Decimal(retry.input.margin)
+    .minus(quotePrice.mul(quantity))
+    .div(new Decimal(btcMarket.initialMarginRatio).minus(1).mul(quantity));
+  assert.ok(markPrice.gte(threshold));
+  assert.equal(buildMarkSafeRfqRetryInput({
+    market: btcMarket,
+    input: retry.input,
+    prepared: { quotes: [{ price: quotePrice.toFixed() }] },
+    markPrice,
+  }), null);
+});
+
+test('resolveRfqOraclePrice ignores a cached display price when a fresh mark is required', async () => {
+  let fetches = 0;
+  const price = await resolveRfqOraclePrice({
+    market,
+    providedOraclePrice: '79517',
+    requireFresh: true,
+    fetchPrice: async () => {
+      fetches += 1;
+      return new Decimal('78849.413570072425047248');
+    },
+  });
+
+  assert.equal(fetches, 1);
+  assert.equal(price.toFixed(), '78849.413570072425047248');
+});
+
 test('buildRfqCloseInput closes longs with a zero-margin short RFQ', () => {
   const input = buildRfqCloseInput({
     market,
@@ -375,6 +435,67 @@ test('buildRfqGatewayPrepareRequest matches the gateway autosign payload', () =>
   assert.equal(request.autosignAccountNumber, 10);
   assert.equal(request.autosignAccountSequence, 11);
   assert.equal(request.quotesWaitTimeMs, RFQ_COLLECT_QUOTES_MS);
+});
+
+test('executeRfqGatewayAutoSign re-prepares an unsafe quote at the mark-safe quantity', async () => {
+  const privateKey = PrivateKey.fromHex('0x' + '07'.repeat(32));
+  const session = {
+    privateKeyHex: privateKey.toPrivateKeyHex(),
+    granterAddress: 'inj1taker',
+    granteeAddress: privateKey.toBech32(),
+  };
+  const btcMarket = {
+    ...market,
+    symbol: 'BTC',
+    initialMarginRatio: '0.019231',
+    minQuantityTickSize: '0.00001',
+  };
+  const requests = [];
+  const gatewayApi = {
+    async fetchPrepareAutoSign(request) {
+      requests.push(request);
+      const preparedQuote = quote({
+        margin: request.margin,
+        quantity: request.quantity,
+        price: '79002',
+      });
+      return {
+        tx: preparedTxWithQuotes([preparedQuote]),
+        quotes: [preparedQuote],
+        rfqId: 12,
+      };
+    },
+  };
+
+  const result = await executeRfqGatewayAutoSign({
+    session,
+    marketId: market.marketId,
+    input: {
+      direction: 'long',
+      margin: '5',
+      quantity: '0.00314',
+      worstPrice: '80313',
+    },
+    gatewayApi,
+    accountDetailsLookup: async () => ({
+      accountDetails: { baseAccount: { accountNumber: 10, sequence: 11 } },
+      source: 'test',
+    }),
+    reviewPrepared: ({ prepared, input }) => buildMarkSafeRfqRetryInput({
+      market: btcMarket,
+      input,
+      prepared,
+      markPrice: '78849.413570072425047248',
+    }),
+    broadcastPrepared: async () => ({
+      txHash: 'SAFE',
+      broadcastPath: 'test',
+    }),
+  });
+
+  assert.deepEqual(requests.map(request => request.quantity), ['0.00314', '0.00285']);
+  assert.equal(result.input.quantity, '0.00285');
+  assert.equal(result.txHash, 'SAFE');
 });
 
 test('normalizeRfqQuoteForContract emits the accept_quote quote shape', () => {
