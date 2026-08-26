@@ -1,5 +1,17 @@
 import Decimal from 'decimal.js';
 
+const SUBSCRIPT_DIGITS = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+
+function compactLeadingFractionZeros(formattedPrice) {
+  const match = formattedPrice.match(/^(-?)0\.(0{3,})([1-9]\d*)$/);
+  if (!match) return formattedPrice;
+
+  const [, sign, leadingZeros, significantDigits] = match;
+  const subscriptCount = String(leadingZeros.length)
+    .replace(/\d/g, digit => SUBSCRIPT_DIGITS[Number(digit)]);
+  return `${sign}0.0${subscriptCount}${significantDigits}`;
+}
+
 // Leaderboard feed (mock - real leaderboard would need indexer queries)
 export const LEADERBOARD_FEED = [
   { user: '@degen_dan', amount: 420, asset: 'ETH', direction: '↑' },
@@ -35,10 +47,11 @@ export function formatPrice(price, decimals = null) {
 
   const normalizedDecimals = normalizePriceDecimals(decimals);
   if (normalizedDecimals != null) {
-    return n.toLocaleString('en-US', {
+    const formattedPrice = n.toLocaleString('en-US', {
       minimumFractionDigits: normalizedDecimals,
       maximumFractionDigits: normalizedDecimals,
     });
+    return compactLeadingFractionZeros(formattedPrice);
   }
 
   if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

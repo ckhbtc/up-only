@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { formatPrice, formatUsdcBalance, priceDecimalsFromTickSize } from '../src/data/mockData.js';
 
 test('formatPrice uses market-specific price decimals', () => {
-  assert.equal(formatPrice(0.000012345, 9), '0.000012345');
+  assert.equal(formatPrice(0.000012345, 9), '0.0₄12345');
+  assert.equal(formatPrice(0.0000899255, 10), '0.0₄899255');
+  assert.equal(formatPrice(0.001234, 6), '0.001234');
   assert.equal(formatPrice(0.17765, 4), '0.1777');
   assert.equal(formatPrice(105432.47, 0), '105,432');
 });
