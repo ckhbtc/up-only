@@ -6,17 +6,16 @@
  */
 
 import { Address } from '@injectivelabs/sdk-ts';
+import { getActiveEvmProvider } from './evmWalletProvider.js';
 
 export function isWalletAvailable() {
-  return typeof window !== 'undefined' && !!window.ethereum;
+  return typeof window !== 'undefined';
 }
 
 export async function connectWallet() {
-  if (!window.ethereum) {
-    throw new Error('No wallet detected. Please install MetaMask or Rabby.');
-  }
+  const provider = getActiveEvmProvider();
 
-  const accounts = await window.ethereum.request({
+  const accounts = await provider.request({
     method: 'eth_requestAccounts',
   });
 
@@ -44,14 +43,15 @@ export function getSubaccountId(ethAddress) {
  * Auto-adds the chain if missing. Non-blocking - EIP-712 signing works from any chain.
  */
 export async function ensureInjectiveChain() {
-  if (!window.ethereum) return;
+  const provider = getActiveEvmProvider({ required: false });
+  if (!provider) return;
   const chainHex = '0x6f0'; // 1776
 
-  const current = await window.ethereum.request({ method: 'eth_chainId' });
+  const current = await provider.request({ method: 'eth_chainId' });
   if (parseInt(current, 16) === 1776) return;
 
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: chainHex }],
     });
@@ -59,7 +59,7 @@ export async function ensureInjectiveChain() {
     if (err.code === 4902) {
       // Chain not in wallet - add it
       try {
-        await window.ethereum.request({
+        await provider.request({
           method: 'wallet_addEthereumChain',
           params: [{
             chainId: chainHex,
@@ -81,7 +81,8 @@ export async function ensureInjectiveChain() {
 }
 
 export function onAccountsChanged(cb) {
-  if (!window.ethereum) return () => {};
+  const provider = getActiveEvmProvider({ required: false });
+  if (!provider?.on) return () => {};
 
   const handler = (accounts) => {
     if (!accounts || accounts.length === 0) {
@@ -95,6 +96,6 @@ export function onAccountsChanged(cb) {
     }
   };
 
-  window.ethereum.on('accountsChanged', handler);
-  return () => window.ethereum.removeListener('accountsChanged', handler);
+  provider.on('accountsChanged', handler);
+  return () => provider.removeListener?.('accountsChanged', handler);
 }

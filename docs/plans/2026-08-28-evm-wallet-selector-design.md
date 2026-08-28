@@ -7,11 +7,12 @@ existing UpOnly trading, AuthZ, take-profit, account-change, and CCTP behavior.
 
 ## Decision
 
-Use the selected wallet's EIP-1193 provider for the entire browser session.
-Discover providers through EIP-6963 first, then fall back to legacy injected
-provider arrays and `window.ethereum`. Present the three supported wallets in a
-brutalist selector matching the existing UpOnly visual system. Persist the
-selected wallet type so later connections prefer the same provider.
+Use Web3-Onboard's open-source core and injected-wallet module to present the
+wallet selector and return the selected wallet's EIP-1193 provider. Its
+EIP-6963 discovery handles multiple installed extensions without relying on
+whichever wallet last overwrote `window.ethereum`. Keep that selected provider
+for the entire browser session and persist the selected wallet label so later
+connections can prefer the same wallet.
 
 Native `window.keplr` Cosmos signing is intentionally out of scope. Keplr's EVM
 provider follows the same interface already used by MetaMask and Rabby, so this
@@ -20,8 +21,9 @@ cross-chain CCTP funding.
 
 ## Data Flow
 
-1. A Connect action opens the wallet selector.
-2. Provider discovery returns supported MetaMask, Rabby, and Keplr options.
+1. A Connect action opens the Web3-Onboard wallet selector.
+2. Its injected-wallet module discovers MetaMask, Rabby, Keplr, and other
+   EIP-6963-compatible browser wallets.
 3. Selecting an installed wallet calls `eth_requestAccounts` on that provider.
 4. The wallet store derives the Injective address from the selected EVM
    address and subscribes to that provider's account-change events.
@@ -31,16 +33,17 @@ cross-chain CCTP funding.
 
 ## Failure Handling
 
-- Installed but undiscovered wallets show a clear unavailable state.
-- A rejected connection keeps the selector open and displays the wallet error.
+- Installed wallets are discovered by Web3-Onboard, with a legacy injected
+  fallback for extensions that have not implemented EIP-6963.
+- A rejected connection leaves the app disconnected and surfaces the wallet
+  error without changing the active provider.
 - If a selected provider disappears after reload, Connect reopens the selector.
 - No operation silently falls back to another installed wallet after selection.
 
 ## Verification
 
-- Test EIP-6963 discovery, classification, deduplication, and legacy fallback.
+- Test Web3-Onboard selection and provider activation through a mocked adapter.
 - Test that connection and account events use the selected provider.
-- Render-test all three selector options and unavailable/error states.
 - Verify AuthZ, TP, bridge, and wallet services no longer hardcode
   `window.ethereum`.
 - Run the full test suite and production build before deployment.

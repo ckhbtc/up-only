@@ -27,6 +27,8 @@
     "@injectivelabs/sdk-ts": "1.19.19",
     "@injectivelabs/ts-types": "1.19.19",
     "@metamask/eth-sig-util": "^8.2.0",
+    "@web3-onboard/core": "^2.24.1",
+    "@web3-onboard/injected-wallets": "^2.11.3",
     "decimal.js": "^10.6.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.16.0",
