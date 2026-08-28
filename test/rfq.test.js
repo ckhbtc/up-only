@@ -437,6 +437,26 @@ test('buildRfqGatewayPrepareRequest matches the gateway autosign payload', () =>
   assert.equal(request.quotesWaitTimeMs, RFQ_COLLECT_QUOTES_MS);
 });
 
+test('buildRfqGatewayPrepareRequest tags app trades with an up-only CID', () => {
+  const privateKey = PrivateKey.fromHex('0x' + '01'.repeat(32));
+  const request = buildRfqGatewayPrepareRequest({
+    session: {
+      privateKeyHex: privateKey.toPrivateKeyHex(),
+      granterAddress: 'inj1taker',
+      granteeAddress: privateKey.toBech32(),
+    },
+    marketId: market.marketId,
+    input: {
+      direction: 'long',
+      margin: '50',
+      quantity: '5',
+      worstPrice: '101',
+    },
+  });
+
+  assert.match(request.cid, /^up-only-[a-z0-9-]+$/);
+});
+
 test('executeRfqGatewayAutoSign re-prepares an unsafe quote at the mark-safe quantity', async () => {
   const privateKey = PrivateKey.fromHex('0x' + '07'.repeat(32));
   const session = {
@@ -494,6 +514,9 @@ test('executeRfqGatewayAutoSign re-prepares an unsafe quote at the mark-safe qua
   });
 
   assert.deepEqual(requests.map(request => request.quantity), ['0.00314', '0.00285']);
+  assert.match(requests[0].cid, /^up-only-[a-z0-9-]+$/);
+  assert.equal(requests[1].cid, requests[0].cid);
+  assert.notEqual(requests[1].clientId, requests[0].clientId);
   assert.equal(result.input.quantity, '0.00285');
   assert.equal(result.txHash, 'SAFE');
 });

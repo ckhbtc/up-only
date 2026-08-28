@@ -20,6 +20,7 @@ import {
   RFQ_TPSL_TRIGGER,
 } from './rfqConstants.js';
 import { broadcastViaAuthz } from './trade.js';
+import { createUpOnlyCid } from './tradeCid.js';
 
 const NETWORK = Network.MainnetSentry;
 const endpoints = getNetworkEndpoints(NETWORK);
@@ -64,11 +65,6 @@ const TRIGGER_KIND_BY_TYPE = {
 };
 
 const ACTIVE_CONDITIONAL_ORDER_STATUS = 'pending_trigger';
-
-function randomId() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `tpsl-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -397,7 +393,7 @@ export async function submitConditionalOrder({
   order,
   laneState,
   deadlineMs = Date.now() + RFQ_TPSL_DEADLINE_MS,
-  cid = randomId(),
+  cid = createUpOnlyCid(),
   rfqApiClient = rfqApi,
   signIntent = signConditionalOrderIntent,
 }) {

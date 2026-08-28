@@ -169,6 +169,38 @@ test('submitConditionalOrder signs with the current granter-derived EVM address'
   assert.equal(submittedOrder.taker, granterAddress);
 });
 
+test('submitConditionalOrder tags take-profit intents with an up-only CID', async () => {
+  const granterAddress = Address.fromHex('0x1111111111111111111111111111111111111111').toBech32();
+  const order = buildTpSlConditionalOrder({
+    market,
+    side: 'long',
+    quantity: '5',
+    triggerPrice: '110',
+    rfqId: 123,
+  });
+
+  let signedIntent = null;
+  let submittedOrder = null;
+  await submitConditionalOrder({
+    session: { granterAddress },
+    order,
+    laneState: { epoch: 4, laneVersion: 7 },
+    signIntent: async (intent) => {
+      signedIntent = intent;
+      return '0x' + '11'.repeat(65);
+    },
+    rfqApiClient: {
+      async createConditionalOrder(request) {
+        submittedOrder = request.order;
+        return { order: { ...request.order, status: 'pending_trigger' } };
+      },
+    },
+  });
+
+  assert.match(signedIntent.cid, /^up-only-[a-z0-9-]+$/);
+  assert.equal(submittedOrder.cid, signedIntent.cid);
+});
+
 test('fetchTakerIntentState parses contract lane counters', async () => {
   const state = await fetchTakerIntentState({
     taker: 'inj1taker',

@@ -49,6 +49,7 @@ import {
   assertOpenMarginAllowed,
   initialMarginCheckPrice,
 } from './leverageLimits.js';
+import { createUpOnlyCid } from './tradeCid.js';
 
 const GRPC_HEADER_SIZE = 5;
 const GRPC_COMPRESSION_NONE = 0;
@@ -1082,7 +1083,7 @@ export function buildAcceptQuoteMessage({
   quantity,
   worstPrice,
   quotes,
-  cid = randomId(),
+  cid = createUpOnlyCid(),
 }) {
   return MsgExecuteContractCompat.fromJSON({
     sender,
@@ -1204,7 +1205,7 @@ export function buildRfqGatewayPrepareRequest({
   input,
   marketId,
   clientId = randomId(),
-  cid = randomId(),
+  cid = createUpOnlyCid(),
   accountDetails = null,
   quotesWaitTimeMs = RFQ_COLLECT_QUOTES_MS,
 }) {
@@ -1509,6 +1510,7 @@ export async function executeRfqGatewayAutoSign({
   minQuoteTtlMs = RFQ_MIN_QUOTE_TTL_MS,
   maxPrepareAttempts = RFQ_PREPARE_MAX_ATTEMPTS,
   timing = null,
+  cid = createUpOnlyCid(),
 }) {
   const activeTiming = timing || createRfqTiming('rfq-execute', {
     marketId,
@@ -1535,6 +1537,7 @@ export async function executeRfqGatewayAutoSign({
       input: currentInput,
       marketId,
       accountDetails,
+      cid,
     });
     markRfqTiming(activeTiming, 'prepare.request.ready', {
       quotesWaitTimeMs: request.quotesWaitTimeMs,
@@ -1583,6 +1586,7 @@ export async function executeRfqGatewayAutoSign({
           input: currentInput,
           marketId,
           accountDetails,
+          cid,
         });
         prepared = null;
         await sleep(RFQ_PREPARE_RETRY_DELAY_MS);
