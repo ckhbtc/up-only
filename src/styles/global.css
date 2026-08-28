@@ -1456,6 +1456,35 @@ input:focus-visible {
   padding: 16px;
 }
 
+.up-bridge-tabs {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 14px;
+}
+
+.up-bridge-tabs button {
+  background: var(--paper);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  line-height: 1;
+  padding: 8px 12px;
+  text-transform: uppercase;
+}
+
+.up-bridge-tabs button.is-active {
+  background: var(--blue);
+  box-shadow: 3px 3px 0 var(--border);
+  color: #fff;
+}
+
+.up-bridge-tabs button:disabled {
+  opacity: 0.55;
+}
+
 .up-bridge-panel {
   background: var(--paper);
   border: 3px solid var(--border);
@@ -1777,6 +1806,166 @@ input:focus-visible {
 
 .up-bridge-state a {
   color: inherit;
+}
+
+.up-bridge-history {
+  display: grid;
+  gap: 12px;
+}
+
+.up-bridge-history-empty {
+  background: var(--paper);
+  border: 3px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.up-bridge-history-list {
+  display: grid;
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 0 5px 5px 0;
+}
+
+.up-bridge-history-row {
+  background: var(--paper);
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--border);
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.up-bridge-history-main,
+.up-bridge-history-meta {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.up-bridge-history-main > div,
+.up-bridge-import > div {
+  display: grid;
+  gap: 3px;
+}
+
+.up-bridge-history-main strong,
+.up-bridge-import strong {
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.up-bridge-history-main span,
+.up-bridge-history-meta,
+.up-bridge-import span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.up-bridge-history-status {
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  text-transform: uppercase;
+}
+
+.up-bridge-history-status.is-complete {
+  color: var(--green);
+}
+
+.up-bridge-history-status.is-needs_attention {
+  color: var(--red);
+}
+
+.up-bridge-history-status.is-ready_to_mint,
+.up-bridge-history-status.is-minting {
+  color: var(--blue);
+}
+
+.up-bridge-history-meta > span:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.up-bridge-history-meta a {
+  color: var(--accent);
+}
+
+.up-bridge-history-error {
+  color: var(--red);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.up-bridge-rescue,
+.up-bridge-import button {
+  background: var(--red);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 3px 3px 0 var(--border);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  line-height: 1;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.up-bridge-rescue:disabled,
+.up-bridge-import button:disabled {
+  opacity: 0.55;
+}
+
+.up-bridge-import {
+  background: var(--bg-card-hover);
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 0.8fr 1.2fr;
+  padding: 11px;
+}
+
+.up-bridge-import > div {
+  grid-column: 1 / -1;
+}
+
+.up-bridge-import select,
+.up-bridge-import input {
+  background: var(--paper);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 0;
+  padding: 8px 9px;
+}
+
+.up-bridge-import input {
+  grid-column: 1 / -1;
+}
+
+.up-bridge-import button {
+  grid-column: 1 / -1;
 }
 
 .up-bridge-submit,
@@ -2520,6 +2709,27 @@ input:focus-visible {
 
   .up-bridge-body {
     padding: 12px;
+  }
+
+  .up-bridge-history-main,
+  .up-bridge-history-meta {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .up-bridge-history-meta > span:last-child {
+    justify-content: flex-start;
+  }
+
+  .up-bridge-import {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .up-bridge-import select,
+  .up-bridge-import input,
+  .up-bridge-import button {
+    grid-column: 1;
   }
 
   .up-bridge-panel-main {

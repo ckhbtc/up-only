@@ -7,6 +7,7 @@ import { createServer } from 'vite';
 
 let vite;
 let BridgeModal;
+let BridgeHistoryPanel;
 
 before(async () => {
   vite = await createServer({
@@ -16,6 +17,7 @@ before(async () => {
     server: { hmr: false, middlewareMode: true, ws: false },
   });
   ({ default: BridgeModal } = await vite.ssrLoadModule('/src/components/BridgeModal.jsx'));
+  ({ default: BridgeHistoryPanel } = await vite.ssrLoadModule('/src/components/BridgeHistoryPanel.jsx'));
 });
 
 after(async () => {
@@ -51,6 +53,50 @@ test('bridge defaults to fast transfer mode', () => {
 
   assert.match(markup, /<button[^>]*aria-pressed="true"[^>]*><strong>Fast<\/strong>/);
   assert.match(markup, /<button[^>]*aria-pressed="false"[^>]*><strong>Standard<\/strong>/);
+});
+
+test('bridge modal exposes bridge and local history tabs', () => {
+  const markup = renderBridge();
+
+  assert.match(markup, /role="tablist" aria-label="Bridge views"/);
+  assert.match(markup, /role="tab"[^>]*aria-selected="true"[^>]*>Bridge<\/button>/);
+  assert.match(markup, /role="tab"[^>]*aria-selected="false"[^>]*>History<\/button>/);
+});
+
+test('bridge history renders recovery controls and transaction links', () => {
+  const burnHash = `0x${'ab'.repeat(32)}`;
+  const markup = renderToStaticMarkup(createElement(BridgeHistoryPanel, {
+    wallet: '0x1111111111111111111111111111111111111111',
+    transfers: [{
+      id: `3:${burnHash}`,
+      wallet: '0x1111111111111111111111111111111111111111',
+      sourceChainId: 42161,
+      sourceDomain: 3,
+      sourceName: 'Arbitrum One',
+      amount: '10',
+      transferMode: 'standard',
+      burnHash,
+      status: 'needs_attention',
+      createdAt: 100,
+      mintHash: null,
+      error: 'Attestation pending',
+    }],
+    recoveringId: null,
+    recoveryNotice: null,
+    recoveryError: null,
+    importHash: '',
+    importChainId: 42161,
+    importing: false,
+    onImportHashChange: () => {},
+    onImportChainChange: () => {},
+    onImport: () => {},
+    onRecover: () => {},
+  }));
+
+  assert.match(markup, /10 USDC/);
+  assert.match(markup, /Needs attention/);
+  assert.match(markup, /https:\/\/arbiscan\.io\/tx\/0xabab/);
+  assert.match(markup, />Rescue<\/button>/);
 });
 
 test('bridge direction uses a centered vector arrow', () => {

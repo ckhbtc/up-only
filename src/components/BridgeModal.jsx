@@ -6,6 +6,8 @@ import {
   fetchRouteFees,
   feeBpsToMaxFee,
   findFeeEntry,
+  fetchAttestationOnce,
+  recoverBridgeTransfer,
   SOURCE_CHAINS,
   INJECTIVE,
   FAST_FINALITY,
@@ -14,8 +16,15 @@ import { isPositiveTokenAmount, sanitizeDecimalInput } from '../services/bridgeA
 import { txExplorerUrl } from '../services/explorer';
 import useWalletStore from '../stores/walletStore';
 import { formatUsdcBalance } from '../data/mockData';
+import {
+  listBridgeTransfers,
+  newestRecoverableBridge,
+  saveBridgeTransfer,
+  updateBridgeTransfer,
+} from '../services/bridgeHistory';
 import ChainLogo from './ChainLogo';
 import CoinLogo from './CoinLogo';
+import BridgeHistoryPanel from './BridgeHistoryPanel';
 
 const PHASE_COPY = {
   'approve-sign': 'Approve USDC - confirm in wallet',
@@ -34,6 +43,8 @@ function shortHash(hash) {
 function networkLabel(name) {
   return String(name || '').toUpperCase();
 }
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function BridgeModal({ onClose }) {
   const {
@@ -58,12 +69,119 @@ export default function BridgeModal({ onClose }) {
   const [fastFee, setFastFee] = useState(null);
   const [fastFeeErr, setFastFeeErr] = useState(null);
   const [chainMenuOpen, setChainMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('bridge');
+  const [history, setHistory] = useState([]);
+  const [recoveringId, setRecoveringId] = useState(null);
+  const [recoveryNotice, setRecoveryNotice] = useState(null);
+  const [recoveryError, setRecoveryError] = useState(null);
+  const [importHash, setImportHash] = useState('');
+  const [importChainId, setImportChainId] = useState(SOURCE_CHAINS[0].id);
+  const [importing, setImporting] = useState(false);
   const chainMenuRef = useRef(null);
+  const mountedRef = useRef(true);
+  const recoveryLocksRef = useRef(new Set());
+  const autoResumeStartedRef = useRef(new Set());
 
   const sourceChain = useMemo(
     () => SOURCE_CHAINS.find(chain => chain.id === sourceChainId) || SOURCE_CHAINS[0],
     [sourceChainId],
   );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const refreshHistory = useCallback(() => {
+    const rows = listBridgeTransfers(ethAddress);
+    if (mountedRef.current) setHistory(rows);
+    return rows;
+  }, [ethAddress]);
+
+  const recoverTransfer = useCallback(async (transfer, { poll = false } = {}) => {
+    if (!transfer || !ethAddress || recoveryLocksRef.current.has(transfer.id)) return null;
+
+    recoveryLocksRef.current.add(transfer.id);
+    if (mountedRef.current) {
+      setRecoveringId(transfer.id);
+      setRecoveryNotice(null);
+      setRecoveryError(null);
+    }
+    const deadline = Date.now() + (30 * 60 * 1000);
+
+    try {
+      while (mountedRef.current) {
+        const result = await recoverBridgeTransfer({
+          sourceDomain: transfer.sourceDomain,
+          burnHash: transfer.burnHash,
+          recipientEvm: ethAddress,
+          onPhase: (nextPhase) => {
+            updateBridgeTransfer(transfer.id, {
+              status: nextPhase,
+              error: null,
+            });
+            refreshHistory();
+          },
+        });
+
+        if (result.status === 'complete') {
+          updateBridgeTransfer(transfer.id, {
+            status: 'complete',
+            mintHash: result.mintHash || transfer.mintHash,
+            error: null,
+          });
+          refreshHistory();
+          refreshBalances();
+          if (mountedRef.current) {
+            setRecoveryNotice(
+              result.alreadyMinted
+                ? 'Transfer was already minted on Injective.'
+                : 'Transfer rescued and minted on Injective.',
+            );
+          }
+          return result;
+        }
+
+        updateBridgeTransfer(transfer.id, {
+          status: 'awaiting_attestation',
+          error: null,
+        });
+        refreshHistory();
+        if (!poll) {
+          if (mountedRef.current) setRecoveryNotice('Circle attestation is still pending.');
+          return result;
+        }
+        if (Date.now() >= deadline) {
+          throw new Error('Circle attestation is still pending. Use Rescue to try again.');
+        }
+        await sleep(5000);
+      }
+      return null;
+    } catch (err) {
+      const message = err.shortMessage || err.message || String(err);
+      updateBridgeTransfer(transfer.id, {
+        status: 'needs_attention',
+        error: message,
+      });
+      refreshHistory();
+      if (mountedRef.current) setRecoveryError(message);
+      return null;
+    } finally {
+      recoveryLocksRef.current.delete(transfer.id);
+      if (mountedRef.current) setRecoveringId(null);
+    }
+  }, [ethAddress, refreshBalances, refreshHistory]);
+
+  useEffect(() => {
+    autoResumeStartedRef.current.clear();
+    const rows = refreshHistory();
+    const pending = newestRecoverableBridge(rows);
+    if (!pending || autoResumeStartedRef.current.has(pending.id)) return;
+
+    autoResumeStartedRef.current.add(pending.id);
+    setActiveTab('history');
+    recoverTransfer(pending, { poll: true });
+  }, [ethAddress, recoverTransfer, refreshHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -121,6 +239,7 @@ export default function BridgeModal({ onClose }) {
   const handleBridge = useCallback(async () => {
     if (!isPositiveTokenAmount(amount)) return;
     const usdcBalanceBefore = usdcBalance || 0;
+    let activeTransferId = null;
     setError(null);
     setSuccess(null);
     setBridging(true);
@@ -136,6 +255,32 @@ export default function BridgeModal({ onClose }) {
         onPhase: (nextPhase, data) => {
           setPhase(nextPhase);
           setPhaseData(data || null);
+
+          if (nextPhase === 'burn-confirm' && data?.txHash) {
+            const record = saveBridgeTransfer({
+              wallet: ethAddress,
+              sourceChainId: sourceChain.id,
+              sourceDomain: sourceChain.domain,
+              sourceName: sourceChain.name,
+              amount,
+              transferMode,
+              burnHash: data.txHash,
+              status: 'awaiting_attestation',
+              createdAt: Date.now(),
+            });
+            activeTransferId = record.id;
+            refreshHistory();
+          } else if (activeTransferId && nextPhase === 'mint-submit') {
+            updateBridgeTransfer(activeTransferId, { status: 'minting', error: null });
+            refreshHistory();
+          } else if (activeTransferId && nextPhase === 'success') {
+            updateBridgeTransfer(activeTransferId, {
+              status: 'complete',
+              mintHash: data?.mintHash || null,
+              error: null,
+            });
+            refreshHistory();
+          }
         },
       });
       setSuccess(result);
@@ -153,6 +298,13 @@ export default function BridgeModal({ onClose }) {
       }).catch(() => {});
     } catch (err) {
       const message = err.shortMessage || err.message || String(err);
+      if (activeTransferId) {
+        updateBridgeTransfer(activeTransferId, {
+          status: 'needs_attention',
+          error: message,
+        });
+        refreshHistory();
+      }
       setError(
         message.includes('User denied') || message.includes('user rejected')
           ? 'Transaction cancelled'
@@ -164,6 +316,7 @@ export default function BridgeModal({ onClose }) {
   }, [
     amount,
     sourceChainId,
+    sourceChain,
     ethAddress,
     injAddress,
     usdcBalance,
@@ -171,6 +324,7 @@ export default function BridgeModal({ onClose }) {
     refreshBalances,
     pollBalancesUntilChange,
     applyUsdcBalanceFloor,
+    refreshHistory,
   ]);
 
   const handleMax = () => {
@@ -180,6 +334,54 @@ export default function BridgeModal({ onClose }) {
       setSuccess(null);
     }
   };
+
+  const handleRecover = useCallback((transfer) => {
+    setActiveTab('history');
+    recoverTransfer(transfer, { poll: false });
+  }, [recoverTransfer]);
+
+  const handleImport = useCallback(async (event) => {
+    event.preventDefault();
+    const hash = importHash.toLowerCase();
+    if (!/^0x[0-9a-f]{64}$/.test(hash)) {
+      setRecoveryError('Enter a valid source-chain burn transaction hash.');
+      return;
+    }
+    const source = SOURCE_CHAINS.find(chain => chain.id === importChainId);
+    if (!source || !ethAddress) return;
+
+    setImporting(true);
+    setRecoveryError(null);
+    setRecoveryNotice(null);
+    try {
+      const attestation = await fetchAttestationOnce(source.domain, hash);
+      if (attestation.status === 'not_found' || !attestation.mintRecipient) {
+        throw new Error('Circle has not indexed this burn yet. Check the network and try again.');
+      }
+      if (attestation.mintRecipient.toLowerCase() !== ethAddress.toLowerCase()) {
+        throw new Error('This bridge transfer belongs to a different wallet');
+      }
+
+      const record = saveBridgeTransfer({
+        wallet: ethAddress,
+        sourceChainId: source.id,
+        sourceDomain: source.domain,
+        sourceName: source.name,
+        amount: null,
+        transferMode: 'imported',
+        burnHash: hash,
+        status: attestation.status === 'ready' ? 'ready_to_mint' : 'awaiting_attestation',
+        createdAt: Date.now(),
+      });
+      refreshHistory();
+      setImportHash('');
+      await recoverTransfer(record, { poll: false });
+    } catch (err) {
+      setRecoveryError(err.shortMessage || err.message || String(err));
+    } finally {
+      if (mountedRef.current) setImporting(false);
+    }
+  }, [ethAddress, importChainId, importHash, recoverTransfer, refreshHistory]);
 
   const balanceLabel = srcBalance != null
     ? `${formatUsdcBalance(formatUnits(srcBalance, 6))} USDC`
@@ -245,6 +447,30 @@ export default function BridgeModal({ onClose }) {
         </header>
 
         <div className="up-bridge-body">
+          <div className="up-bridge-tabs" role="tablist" aria-label="Bridge views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'bridge'}
+              className={activeTab === 'bridge' ? 'is-active' : ''}
+              onClick={() => setActiveTab('bridge')}
+              disabled={bridging}
+            >Bridge</button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'history'}
+              className={activeTab === 'history' ? 'is-active' : ''}
+              onClick={() => {
+                refreshHistory();
+                setActiveTab('history');
+              }}
+              disabled={bridging}
+            >History</button>
+          </div>
+
+          {activeTab === 'bridge' ? (
+            <>
           <div className="up-bridge-panel">
             <div className="up-bridge-label-row">
               <span>From</span>
@@ -421,6 +647,23 @@ export default function BridgeModal({ onClose }) {
             </button>
           ) : (
             <button type="button" className="up-bridge-done" onClick={onClose}>Done</button>
+          )}
+            </>
+          ) : (
+            <BridgeHistoryPanel
+              wallet={ethAddress}
+              transfers={history}
+              recoveringId={recoveringId}
+              recoveryNotice={recoveryNotice}
+              recoveryError={recoveryError}
+              importHash={importHash}
+              importChainId={importChainId}
+              importing={importing}
+              onImportHashChange={setImportHash}
+              onImportChainChange={setImportChainId}
+              onImport={handleImport}
+              onRecover={handleRecover}
+            />
           )}
         </div>
       </section>
