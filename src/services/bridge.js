@@ -317,6 +317,26 @@ export async function isCctpMessageUsed(message) {
   return BigInt(used) !== 0n;
 }
 
+export async function relayCctpMint({
+  message,
+  attestation,
+  isMessageUsedFn = isCctpMessageUsed,
+  relayMintFn = api.relayMint,
+}) {
+  try {
+    const response = await relayMintFn(message, attestation);
+    return {
+      mintHash: typeof response === 'string' ? response : response?.txHash || null,
+      alreadyMinted: false,
+    };
+  } catch (err) {
+    if (await isMessageUsedFn(message).catch(() => false)) {
+      return { mintHash: null, alreadyMinted: true };
+    }
+    throw err;
+  }
+}
+
 export async function recoverBridgeTransfer({
   sourceDomain,
   burnHash,
@@ -341,15 +361,13 @@ export async function recoverBridgeTransfer({
   }
 
   onPhase('minting', { message: result.message });
-  try {
-    const mintHash = await relayMintFn(result.message, result.attestation);
-    return { status: 'complete', mintHash, alreadyMinted: false };
-  } catch (err) {
-    if (await isMessageUsedFn(result.message).catch(() => false)) {
-      return { status: 'complete', mintHash: null, alreadyMinted: true };
-    }
-    throw err;
-  }
+  const mint = await relayCctpMint({
+    message: result.message,
+    attestation: result.attestation,
+    isMessageUsedFn,
+    relayMintFn,
+  });
+  return { status: 'complete', ...mint };
 }
 
 // ─── High-level orchestrator ──────────────────────────────────────────────
@@ -459,7 +477,7 @@ export async function executeBridge({
   // submits receiveMessage from its own INJ-funded wallet so the user
   // pays no INJ-EVM gas and doesn't have to switch chains back.
   onPhase('mint-submit', { dst: INJECTIVE.name });
-  const { txHash: mintHash } = await api.relayMint(message, attestation);
+  const { mintHash } = await relayCctpMint({ message, attestation });
   const targetInjectiveUsdc = startingInjectiveUsdc != null ? startingInjectiveUsdc + amount : null;
   let evmUsdcBalance = null;
 

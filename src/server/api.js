@@ -63,6 +63,10 @@ router.post('/relay-mint', async (req, res) => {
     const txHash = await relayMint({ message, attestation }, ip);
     res.json({ ok: true, txHash });
   } catch (err) {
+    console.error('[CCTP-MINT] relay.failed', JSON.stringify({
+      at: new Date().toISOString(),
+      message: err.message,
+    }));
     const code = /Rate limit|Invalid|Message dst/.test(err.message) ? 400 : 500;
     res.status(code).json({ error: err.message });
   }

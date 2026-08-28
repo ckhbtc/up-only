@@ -299,17 +299,22 @@ export default function BridgeModal({ onClose }) {
     } catch (err) {
       const message = err.shortMessage || err.message || String(err);
       if (activeTransferId) {
+        const recoveryMessage = 'USDC was burned successfully, but automatic mint was interrupted. Press Rescue to finish.';
         updateBridgeTransfer(activeTransferId, {
           status: 'needs_attention',
-          error: message,
+          error: recoveryMessage,
         });
         refreshHistory();
+        setRecoveryError(recoveryMessage);
+        setActiveTab('history');
+        setError(null);
+      } else {
+        setError(
+          message.includes('User denied') || message.includes('user rejected')
+            ? 'Transaction cancelled'
+            : message,
+        );
       }
-      setError(
-        message.includes('User denied') || message.includes('user rejected')
-          ? 'Transaction cancelled'
-          : message,
-      );
     } finally {
       setBridging(false);
     }

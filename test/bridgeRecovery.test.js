@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   cctpMintRecipientFromMessage,
   fetchAttestationOnce,
+  relayCctpMint,
   recoverBridgeTransfer,
 } from '../src/services/bridge.js';
 
@@ -77,4 +78,15 @@ test('recovery relays ready messages and accepts already minted transfers', asyn
 
   assert.deepEqual(relayed, { status: 'complete', mintHash, alreadyMinted: false });
   assert.deepEqual(alreadyMinted, { status: 'complete', mintHash: null, alreadyMinted: true });
+});
+
+test('automatic mint treats a lost relay response as complete once used on-chain', async () => {
+  const result = await relayCctpMint({
+    message: cctpMessage(),
+    attestation,
+    relayMintFn: async () => { throw new Error('Request failed (502)'); },
+    isMessageUsedFn: async () => true,
+  });
+
+  assert.deepEqual(result, { mintHash: null, alreadyMinted: true });
 });

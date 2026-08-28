@@ -63,6 +63,15 @@ test('bridge modal exposes bridge and local history tabs', () => {
   assert.match(markup, /role="tab"[^>]*aria-selected="false"[^>]*>History<\/button>/);
 });
 
+test('post-burn failures direct the user to History rescue', async () => {
+  const source = await import('node:fs/promises').then(fs => (
+    fs.readFile(new URL('../src/components/BridgeModal.jsx', import.meta.url), 'utf8')
+  ));
+
+  assert.match(source, /USDC was burned successfully, but automatic mint was interrupted\. Press Rescue to finish\./);
+  assert.match(source, /setActiveTab\('history'\)/);
+});
+
 test('bridge history renders recovery controls and transaction links', () => {
   const burnHash = `0x${'ab'.repeat(32)}`;
   const markup = renderToStaticMarkup(createElement(BridgeHistoryPanel, {
