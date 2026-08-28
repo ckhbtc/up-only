@@ -11,6 +11,7 @@ coverage/
 *.pem
 *.key
 sessions.json
+.data/
 
 # Local-only agent and deployment notes
 AGENTS.md
