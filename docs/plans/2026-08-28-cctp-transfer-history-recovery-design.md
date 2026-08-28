@@ -2,7 +2,7 @@
 
 The bridge modal gains `Bridge` and `History` tabs. History is private to the
 browser and scoped to the connected EVM wallet. Each CCTP transfer is persisted
-to `localStorage` as soon as its source-chain burn transaction confirms. A
+to `localStorage` as soon as its source-chain burn transaction is submitted. A
 record contains a version, wallet, source chain and Circle domain, amount,
 transfer mode, burn hash, creation/update timestamps, state, and optional mint
 hash. Records are normalized on read, capped to a small recent-history limit,
