@@ -13,6 +13,7 @@ import AuthZSetup from './components/AuthZSetup';
 import BridgeModal from './components/BridgeModal';
 import Confetti from './components/Confetti';
 import TransactionStatus from './components/TransactionStatus';
+import WalletSelector from './components/WalletSelector';
 import {
   buildRfqCloseInput,
   primeRfqAccountCache,
@@ -87,6 +88,9 @@ export default function App() {
   const [txStatus, setTxStatus] = useState(null); // { type: 'loading'|'success'|'warning'|'error', message, txHash? }
   const [confetti, setConfetti] = useState(false);
   const [showBridge, setShowBridge] = useState(false);
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const [connectingWalletId, setConnectingWalletId] = useState(null);
+  const [walletConnectError, setWalletConnectError] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authDismissedFor, setAuthDismissedFor] = useState(null);
   const [openedCards, setOpenedCards] = useState({});
@@ -161,6 +165,30 @@ export default function App() {
   const clearTxStatusSoon = useCallback(() => {
     setTimeout(() => setTxStatus(null), 5000);
   }, []);
+
+  const openWalletSelector = useCallback(() => {
+    setWalletConnectError('');
+    setShowWalletSelector(true);
+  }, []);
+
+  const closeWalletSelector = useCallback(() => {
+    if (connectingWalletId) return;
+    setShowWalletSelector(false);
+    setWalletConnectError('');
+  }, [connectingWalletId]);
+
+  const handleWalletSelect = useCallback(async (wallet) => {
+    setConnectingWalletId(wallet.id);
+    setWalletConnectError('');
+    try {
+      await connect(wallet);
+      setShowWalletSelector(false);
+    } catch (err) {
+      setWalletConnectError(err.message || 'Wallet connection failed.');
+    } finally {
+      setConnectingWalletId(null);
+    }
+  }, [connect]);
 
   const beginTrade = useCallback(() => {
     if (!tradeLockRef.current.tryAcquire()) return false;
@@ -594,6 +622,7 @@ export default function App() {
         onCloseSearch={closeSearch}
         onSearchQueryChange={setSearchQuery}
         onSelectSearchResult={selectSearchResult}
+        onConnect={openWalletSelector}
         onAddFunds={() => setShowBridge(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
@@ -649,7 +678,7 @@ export default function App() {
                   opened={Boolean(openedCards[market.marketId])}
                   opening={Boolean(openingCards[market.marketId])}
                   tradeBusy={tradeBusy}
-                  onConnect={connect}
+                  onConnect={openWalletSelector}
                   onAuthorize={handleAuthorizeWallet}
                   onConfirm={handleCardConfirm}
                 />
@@ -665,6 +694,15 @@ export default function App() {
       </div>
 
       {showBridge && <BridgeModal onClose={() => setShowBridge(false)} />}
+
+      {showWalletSelector && (
+        <WalletSelector
+          connectingId={connectingWalletId}
+          error={walletConnectError}
+          onSelect={handleWalletSelect}
+          onClose={closeWalletSelector}
+        />
+      )}
 
       {showAuthModal && (
         <AuthZSetup

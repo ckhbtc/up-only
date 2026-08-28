@@ -47,13 +47,14 @@ export default function TopBar({
   onCloseSearch,
   onSearchQueryChange,
   onSelectSearchResult,
+  onConnect,
   onAddFunds,
   onRevokeAutosign,
   sessionActive,
   revokingAutosign,
   devMode,
 }) {
-  const { connected, connecting, ethAddress, injAddress, usdcBalance, connect, disconnect } = useWalletStore();
+  const { connected, connecting, ethAddress, injAddress, usdcBalance, disconnect } = useWalletStore();
   const searchInputRef = useRef(null);
   const searchListRef = useRef(null);
   const resultRefs = useRef(new Map());
@@ -284,7 +285,7 @@ export default function TopBar({
               </div>
             </>
           ) : (
-            <button type="button" className="up-connect" onClick={connect} disabled={connecting}>
+            <button type="button" className="up-connect" onClick={onConnect} disabled={connecting}>
               {connecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
           )}
