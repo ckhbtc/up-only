@@ -1,5 +1,5 @@
 const DEFAULT_ALLOWED_ORIGINS = 'https://uponly.click,http://localhost:36000';
-const DEFAULT_RATE_LIMIT = 3;
+const DEFAULT_RATE_LIMIT = 10;
 const DEFAULT_RATE_WINDOW_MS = 60 * 60 * 1000;
 
 export function parseAllowedOrigins(value = DEFAULT_ALLOWED_ORIGINS) {
