@@ -1,90 +1,113 @@
-const INJECTIVE_EVM_CHAIN = {
-  id: '0x6f0',
-  token: 'INJ',
-  label: 'Injective EVM',
-  rpcUrl: 'https://sentry.evm-rpc.injective.network/',
-};
+import { createStore } from 'mipd';
 
-let onboardPromise = null;
+const SUPPORTED_WALLETS = [
+  {
+    id: 'metamask',
+    label: 'MetaMask',
+    installUrl: 'https://metamask.io/download/',
+    monogram: 'M',
+    matchesInfo: (info) => includesWalletName(info, ['metamask']),
+    matchesProvider: (provider) => Boolean(
+      provider?.isMetaMask
+      && !provider?.isRabby
+      && !provider?.rabby
+      && !provider?.isKeplr
+      && !provider?.keplr,
+    ),
+  },
+  {
+    id: 'rabby',
+    label: 'Rabby',
+    installUrl: 'https://rabby.io/',
+    monogram: 'R',
+    matchesInfo: (info) => includesWalletName(info, ['rabby']),
+    matchesProvider: (provider) => Boolean(provider?.isRabby || provider?.rabby),
+  },
+  {
+    id: 'keplr',
+    label: 'Keplr',
+    installUrl: 'https://www.keplr.app/download',
+    monogram: 'K',
+    matchesInfo: (info) => includesWalletName(info, ['keplr']),
+    matchesProvider: (provider) => Boolean(provider?.isKeplr || provider?.keplr),
+  },
+];
+
+let providerStore = null;
 let activeWallet = null;
 
-async function createWalletOnboard() {
-  if (typeof window === 'undefined') {
-    throw new Error('Wallet selection is only available in a browser.');
-  }
+function includesWalletName(info = {}, names) {
+  const identity = `${info.name || ''} ${info.rdns || ''}`.toLowerCase();
+  return names.some(name => identity.includes(name));
+}
 
-  const [{ default: Onboard }, { default: injectedModule }] = await Promise.all([
-    import('@web3-onboard/core'),
-    import('@web3-onboard/injected-wallets'),
-  ]);
-  const injected = injectedModule();
+function safeWalletIcon(icon) {
+  return typeof icon === 'string' && /^data:image\/(?:png|jpe?g|webp|svg\+xml)[;,]/i.test(icon)
+    ? icon
+    : null;
+}
 
-  return Onboard({
-    wallets: [injected],
-    chains: [INJECTIVE_EVM_CHAIN],
-    appMetadata: {
-      name: 'UpOnly',
-      description: 'Long-only max-leverage trading on Injective',
-      recommendedInjectedWallets: [
-        { name: 'MetaMask', url: 'https://metamask.io/download/' },
-        { name: 'Rabby', url: 'https://rabby.io/' },
-        { name: 'Keplr', url: 'https://www.keplr.app/download' },
-      ],
-    },
-    connect: {
-      autoConnectLastWallet: true,
-      removeWhereIsMyWalletWarning: true,
-      removeIDontHaveAWalletInfoLink: true,
-    },
-    accountCenter: {
-      desktop: { enabled: false },
-      mobile: { enabled: false },
-    },
-    notify: { enabled: false },
-    disableFontDownload: true,
-    theme: {
-      '--w3o-background-color': '#fffdf0',
-      '--w3o-foreground-color': '#ffffff',
-      '--w3o-text-color': '#101014',
-      '--w3o-border-color': '#101014',
-      '--w3o-action-color': '#184fe8',
-      '--w3o-border-radius': '8px',
-      '--w3o-font-family': 'Trebuchet MS, Arial, sans-serif',
-    },
+function legacyProviders(windowObject) {
+  const ethereum = windowObject?.ethereum;
+  if (!ethereum) return [];
+  const providers = Array.isArray(ethereum.providers) ? ethereum.providers : [ethereum];
+  return [...new Set(providers.filter(provider => provider?.request))];
+}
+
+export function listEvmWallets({ announced = [], windowObject } = {}) {
+  const browserWindow = windowObject ?? (typeof window !== 'undefined' ? window : {});
+  const legacy = legacyProviders(browserWindow);
+
+  return SUPPORTED_WALLETS.map(wallet => {
+    const detail = announced.find(candidate => wallet.matchesInfo(candidate?.info));
+    const provider = detail?.provider || legacy.find(candidate => wallet.matchesProvider(candidate));
+
+    return {
+      id: wallet.id,
+      label: wallet.label,
+      installUrl: wallet.installUrl,
+      monogram: wallet.monogram,
+      icon: safeWalletIcon(detail?.info?.icon),
+      provider: provider || null,
+      installed: Boolean(provider),
+    };
   });
 }
 
-export async function getWalletOnboard() {
-  if (!onboardPromise) onboardPromise = createWalletOnboard();
-  return onboardPromise;
+function getProviderStore() {
+  if (typeof window === 'undefined') return null;
+  if (!providerStore) providerStore = createStore();
+  return providerStore;
 }
 
-export async function connectEvmWallet(onboard = null) {
-  const client = onboard || await getWalletOnboard();
-  const wallets = await client.connectWallet();
-  const selected = wallets?.[0];
+export function getEvmWallets() {
+  const store = getProviderStore();
+  return listEvmWallets({
+    announced: store?.getProviders() || [],
+    windowObject: typeof window !== 'undefined' ? window : {},
+  });
+}
 
-  if (!selected?.provider) {
-    throw new Error('Wallet connection was cancelled.');
+export function subscribeEvmWallets(listener) {
+  const store = getProviderStore();
+  if (!store) return () => {};
+  return store.subscribe(() => listener(getEvmWallets()));
+}
+
+export function refreshEvmWallets() {
+  getProviderStore()?.reset();
+}
+
+export async function connectEvmWallet(wallet) {
+  if (!wallet?.provider || !wallet.installed) {
+    throw new Error(`${wallet?.label || 'Wallet'} is not installed.`);
   }
 
   activeWallet = {
-    label: selected.label || 'Injected Wallet',
-    provider: selected.provider,
+    label: wallet.label,
+    provider: wallet.provider,
   };
   return activeWallet;
-}
-
-export async function disconnectEvmWallet(onboard = null) {
-  const selected = activeWallet;
-  if (!selected) return;
-
-  try {
-    const client = onboard || await getWalletOnboard();
-    await client.disconnectWallet({ label: selected.label });
-  } finally {
-    activeWallet = null;
-  }
 }
 
 export function getActiveEvmProvider({ required = true } = {}) {

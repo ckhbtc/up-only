@@ -18,9 +18,7 @@ test('wallet connection requests accounts from the selector provider', async () 
       return ['0x1111111111111111111111111111111111111111'];
     },
   };
-  await connectEvmWallet({
-    connectWallet: async () => [{ label: 'Keplr', provider }],
-  });
+  await connectEvmWallet({ label: 'Keplr', provider, installed: true });
 
   const wallet = await connectWallet();
 
@@ -41,9 +39,7 @@ test('account events subscribe to and unsubscribe from the selector provider', a
       removed = { event, listener };
     },
   };
-  await connectEvmWallet({
-    connectWallet: async () => [{ label: 'Rabby', provider }],
-  });
+  await connectEvmWallet({ label: 'Rabby', provider, installed: true });
   const changes = [];
 
   const unsubscribe = onAccountsChanged(info => changes.push(info));

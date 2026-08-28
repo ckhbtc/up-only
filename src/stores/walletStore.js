@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { connectWallet, onAccountsChanged } from '../services/wallet';
 import {
+  clearActiveEvmWallet,
   connectEvmWallet,
-  disconnectEvmWallet,
 } from '../services/evmWalletProvider.js';
 import { fetchBalances } from '../services/injective';
 import { clearGrantee } from '../services/grantee';
@@ -37,11 +37,11 @@ const useWalletStore = create((set, get) => ({
   usdcBalanceFloorExpiresAt: 0,
   error: null,
 
-  connect: async () => {
+  connect: async (wallet) => {
     set({ connecting: true, error: null });
     try {
       const prevInjAddress = get().injAddress;
-      const { label: walletLabel } = await connectEvmWallet();
+      const { label: walletLabel } = await connectEvmWallet(wallet);
       const { ethAddress, injAddress, subaccountId } = await connectWallet();
 
       // If the connected wallet changed (or is new), wipe any lingering session
@@ -72,12 +72,13 @@ const useWalletStore = create((set, get) => ({
         }
       });
     } catch (err) {
+      clearActiveEvmWallet();
       set({ connecting: false, error: err.message });
       throw err;
     }
   },
 
-  disconnect: async () => {
+  disconnect: () => {
     clearAccountsChangedListener();
     clearSession(get().injAddress);
     set({
@@ -92,11 +93,7 @@ const useWalletStore = create((set, get) => ({
       usdcBalanceFloorExpiresAt: 0,
       error: null,
     });
-    try {
-      await disconnectEvmWallet();
-    } catch (err) {
-      console.warn('Wallet provider disconnect failed:', err.message || err);
-    }
+    clearActiveEvmWallet();
   },
 
   refreshBalances: async () => {

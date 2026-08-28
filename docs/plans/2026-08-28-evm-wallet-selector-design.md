@@ -7,12 +7,12 @@ existing UpOnly trading, AuthZ, take-profit, account-change, and CCTP behavior.
 
 ## Decision
 
-Use Web3-Onboard's open-source core and injected-wallet module to present the
-wallet selector and return the selected wallet's EIP-1193 provider. Its
-EIP-6963 discovery handles multiple installed extensions without relying on
-whichever wallet last overwrote `window.ethereum`. Keep that selected provider
-for the entire browser session and persist the selected wallet label so later
-connections can prefer the same wallet.
+Use the MIT-licensed `mipd` utility for EIP-6963 discovery and a compact UpOnly
+selector for MetaMask, Rabby, and Keplr. This handles multiple installed
+extensions without relying on whichever wallet last overwrote
+`window.ethereum`, while avoiding a hosted wallet service and the legacy
+cryptography dependencies pulled in by larger modal kits. Keep the selected
+EIP-1193 provider for the entire browser session.
 
 Native `window.keplr` Cosmos signing is intentionally out of scope. Keplr's EVM
 provider follows the same interface already used by MetaMask and Rabby, so this
@@ -21,9 +21,9 @@ cross-chain CCTP funding.
 
 ## Data Flow
 
-1. A Connect action opens the Web3-Onboard wallet selector.
-2. Its injected-wallet module discovers MetaMask, Rabby, Keplr, and other
-   EIP-6963-compatible browser wallets.
+1. A Connect action opens the UpOnly wallet selector.
+2. `mipd` discovers MetaMask, Rabby, and Keplr through EIP-6963, with a legacy
+   injected-provider-array fallback.
 3. Selecting an installed wallet calls `eth_requestAccounts` on that provider.
 4. The wallet store derives the Injective address from the selected EVM
    address and subscribes to that provider's account-change events.
@@ -33,8 +33,8 @@ cross-chain CCTP funding.
 
 ## Failure Handling
 
-- Installed wallets are discovered by Web3-Onboard, with a legacy injected
-  fallback for extensions that have not implemented EIP-6963.
+- Installed wallets are discovered through EIP-6963, with a legacy injected
+  fallback for extensions that have not implemented it.
 - A rejected connection leaves the app disconnected and surfaces the wallet
   error without changing the active provider.
 - If a selected provider disappears after reload, Connect reopens the selector.
@@ -42,7 +42,7 @@ cross-chain CCTP funding.
 
 ## Verification
 
-- Test Web3-Onboard selection and provider activation through a mocked adapter.
+- Test EIP-6963 classification, legacy fallback, and provider activation.
 - Test that connection and account events use the selected provider.
 - Verify AuthZ, TP, bridge, and wallet services no longer hardcode
   `window.ethereum`.
