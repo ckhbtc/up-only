@@ -6,6 +6,7 @@ import apiRouter from './src/server/api.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 'loopback');
 
 app.use('/api', apiRouter);
 

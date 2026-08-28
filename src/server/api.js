@@ -6,6 +6,7 @@
 
 import express from 'express';
 import { initAccount } from './faucet.js';
+import { requireFaucetAppRequest } from './faucetSecurity.js';
 import { relayMint } from './relayMint.js';
 import { relayRfqBroadcast } from './rfqBroadcast.js';
 
@@ -41,7 +42,7 @@ router.get('/health', (_req, res) => {
   res.json(healthResponse());
 });
 
-router.post('/init-account', async (req, res) => {
+router.post('/init-account', requireFaucetAppRequest, async (req, res) => {
   try {
     const { wallet } = req.body || {};
     if (!wallet || !/^inj1[a-z0-9]{38}$/.test(wallet)) {
