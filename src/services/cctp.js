@@ -179,6 +179,13 @@ export const MESSAGE_TRANSMITTER_V2_ABI = [
     ],
     outputs: [{ name: 'success', type: 'bool' }],
   },
+  {
+    type: 'function',
+    name: 'usedNonces',
+    stateMutability: 'view',
+    inputs: [{ name: 'nonce', type: 'bytes32' }],
+    outputs: [{ type: 'uint256' }],
+  },
 ];
 
 export const ERC20_ABI = [

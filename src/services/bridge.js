@@ -36,6 +36,7 @@ import {
   ZERO_BYTES32,
   viemChain,
   TOKEN_MESSENGER_V2_ABI,
+  MESSAGE_TRANSMITTER_V2_ABI,
   ERC20_ABI,
 } from './cctp.js';
 import { api } from './api.js';
@@ -239,20 +240,61 @@ export async function fetchSourceUsdcBalance(chainId, account) {
 
 // ─── Attestation polling ──────────────────────────────────────────────────
 
-async function pollAttestation(srcDomain, burnTxHash) {
+export function cctpMintRecipientFromMessage(message) {
+  if (typeof message !== 'string' || !/^0x[0-9a-fA-F]+$/.test(message)) {
+    throw new Error('Invalid CCTP message');
+  }
+
+  // V2 header is 148 bytes. BurnMessageV2 mintRecipient starts 36 bytes
+  // into the body and is a bytes32-padded EVM address.
+  const addressOffsetBytes = 148 + 36 + 12;
+  const start = 2 + (addressOffsetBytes * 2);
+  const addressHex = message.slice(start, start + 40);
+  if (addressHex.length !== 40) throw new Error('Invalid CCTP burn message');
+  return getAddress(`0x${addressHex}`);
+}
+
+export function cctpNonceFromMessage(message) {
+  if (typeof message !== 'string' || !/^0x[0-9a-fA-F]+$/.test(message)) {
+    throw new Error('Invalid CCTP message');
+  }
+  const nonce = `0x${message.slice(2 + (12 * 2), 2 + ((12 + 32) * 2))}`;
+  if (nonce.length !== 66) throw new Error('Invalid CCTP message nonce');
+  return nonce;
+}
+
+export async function fetchAttestationOnce(srcDomain, burnTxHash, { fetchFn = fetch } = {}) {
   const url = `${ATTESTATION_API}/v2/messages/${srcDomain}?transactionHash=${burnTxHash}`;
+  const res = await fetchFn(url);
+  if (!res.ok) throw new Error(`Circle attestation check failed (${res.status})`);
+
+  const data = await res.json();
+  const msg = data.messages?.[0];
+  if (!msg) return { status: 'not_found' };
+
+  let mintRecipient = null;
+  if (msg.message) mintRecipient = cctpMintRecipientFromMessage(msg.message);
+  if (msg.status !== 'complete' || !msg.attestation || msg.attestation === 'PENDING') {
+    return { status: 'pending', message: msg.message || null, mintRecipient };
+  }
+
+  return {
+    status: 'ready',
+    message: msg.message,
+    attestation: msg.attestation,
+    mintRecipient,
+  };
+}
+
+async function pollAttestation(srcDomain, burnTxHash) {
   const start = Date.now();
   const timeoutMs = 30 * 60 * 1000; // 30 min
 
   while (true) {
     try {
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const msg = data.messages?.[0];
-        if (msg && msg.status === 'complete' && msg.attestation && msg.attestation !== 'PENDING') {
-          return { message: msg.message, attestation: msg.attestation };
-        }
+      const result = await fetchAttestationOnce(srcDomain, burnTxHash);
+      if (result.status === 'ready') {
+        return { message: result.message, attestation: result.attestation };
       }
     } catch {
       // network blip - retry
@@ -261,6 +303,52 @@ async function pollAttestation(srcDomain, burnTxHash) {
       throw new Error('Attestation timed out after 30 minutes.');
     }
     await sleep(5000);
+  }
+}
+
+export async function isCctpMessageUsed(message) {
+  const nonce = cctpNonceFromMessage(message);
+  const used = await publicClient(INJECTIVE).readContract({
+    address: INJECTIVE.cctp.messageTransmitter,
+    abi: MESSAGE_TRANSMITTER_V2_ABI,
+    functionName: 'usedNonces',
+    args: [nonce],
+  });
+  return BigInt(used) !== 0n;
+}
+
+export async function recoverBridgeTransfer({
+  sourceDomain,
+  burnHash,
+  recipientEvm,
+  fetchFn = fetch,
+  isMessageUsedFn = isCctpMessageUsed,
+  relayMintFn = api.relayMint,
+  onPhase = () => {},
+}) {
+  const result = await fetchAttestationOnce(sourceDomain, burnHash, { fetchFn });
+  if (result.status === 'not_found') return { status: 'not_found' };
+
+  const expectedRecipient = getAddress(recipientEvm);
+  if (!result.mintRecipient || result.mintRecipient !== expectedRecipient) {
+    throw new Error('This bridge transfer belongs to a different wallet');
+  }
+  if (result.status !== 'ready') return { status: 'pending' };
+
+  onPhase('ready_to_mint', { message: result.message });
+  if (await isMessageUsedFn(result.message)) {
+    return { status: 'complete', mintHash: null, alreadyMinted: true };
+  }
+
+  onPhase('minting', { message: result.message });
+  try {
+    const mintHash = await relayMintFn(result.message, result.attestation);
+    return { status: 'complete', mintHash, alreadyMinted: false };
+  } catch (err) {
+    if (await isMessageUsedFn(result.message).catch(() => false)) {
+      return { status: 'complete', mintHash: null, alreadyMinted: true };
+    }
+    throw err;
   }
 }
 
