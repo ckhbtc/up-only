@@ -43,7 +43,14 @@ test('bridge speed boxes omit finality status words', () => {
   const markup = renderBridge();
 
   assert.doesNotMatch(markup, /Finalized|Confirmed/i);
-  assert.match(markup, /<strong>Standard<\/strong><span>free<\/span>/);
+  assert.match(markup, /<strong>Standard<\/strong><span>free · 1–13 min<\/span>/);
+});
+
+test('bridge defaults to fast transfer mode', () => {
+  const markup = renderBridge();
+
+  assert.match(markup, /<button[^>]*aria-pressed="true"[^>]*><strong>Fast<\/strong>/);
+  assert.match(markup, /<button[^>]*aria-pressed="false"[^>]*><strong>Standard<\/strong>/);
 });
 
 test('bridge direction uses a centered vector arrow', () => {

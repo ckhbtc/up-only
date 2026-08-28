@@ -22,7 +22,6 @@ const PHASE_COPY = {
   'approve-confirm': 'Approving USDC...',
   'burn-sign': 'Burn USDC - confirm in wallet',
   'burn-confirm': 'Burning on source chain...',
-  attest: 'Waiting for Circle attestation (1–13 min)...',
   'mint-submit': 'Minting native USDC on INJECTIVE...',
   'mint-confirm': 'Confirming native USDC balance...',
   success: 'Bridge complete',
@@ -48,7 +47,7 @@ export default function BridgeModal({ onClose }) {
 
   const [sourceChainId, setSourceChainId] = useState(SOURCE_CHAINS[0].id);
   const [amount, setAmount] = useState('');
-  const [transferMode, setTransferMode] = useState('standard');
+  const [transferMode, setTransferMode] = useState('fast');
   const [bridging, setBridging] = useState(false);
   const [phase, setPhase] = useState(null);
   const [phaseData, setPhaseData] = useState(null);
@@ -104,9 +103,18 @@ export default function BridgeModal({ onClose }) {
     fetchRouteFees(source.domain, INJECTIVE.domain)
       .then((entries) => {
         if (cancelled) return;
-        setFastFee(findFeeEntry(entries, FAST_FINALITY) || null);
+        const fee = findFeeEntry(entries, FAST_FINALITY) || null;
+        setFastFee(fee);
+        if (!fee) {
+          setFastFeeErr('Fast transfer unavailable for this route');
+          setTransferMode(mode => mode === 'fast' ? 'standard' : mode);
+        }
       })
-      .catch((err) => { if (!cancelled) setFastFeeErr(err.shortMessage || err.message); });
+      .catch((err) => {
+        if (cancelled) return;
+        setFastFeeErr(err.shortMessage || err.message);
+        setTransferMode(mode => mode === 'fast' ? 'standard' : mode);
+      });
     return () => { cancelled = true; };
   }, [sourceChainId]);
 
@@ -178,7 +186,11 @@ export default function BridgeModal({ onClose }) {
     : balanceErr
       ? 'unavailable'
       : '…';
-  const phaseLabel = phase ? (PHASE_COPY[phase] || phase) : null;
+  const phaseLabel = phase === 'attest'
+    ? transferMode === 'fast'
+      ? 'Waiting for Circle fast attestation (usually under 1 min)...'
+      : 'Waiting for Circle attestation (1–13 min)...'
+    : phase ? (PHASE_COPY[phase] || phase) : null;
   const sourceNetworkLabel = networkLabel(sourceChain.name);
   const injectiveNetworkLabel = networkLabel(INJECTIVE.name);
 
@@ -337,7 +349,7 @@ export default function BridgeModal({ onClose }) {
 
           <div className="up-bridge-speed" role="group" aria-label="Bridge speed">
             {[
-              { id: 'standard', label: 'Standard', sub: 'free' },
+              { id: 'standard', label: 'Standard', sub: 'free · 1–13 min' },
               { id: 'fast', label: 'Fast', sub: fastFeeLabel },
             ].map((option) => {
               const active = transferMode === option.id;
