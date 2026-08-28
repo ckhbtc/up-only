@@ -40,6 +40,7 @@ import {
   ERC20_ABI,
 } from './cctp.js';
 import { api } from './api.js';
+import { getActiveEvmProvider } from './evmWalletProvider.js';
 
 // ─── Re-exports for callers (BridgeModal expects these here) ──────────────
 export { SOURCE_CHAINS, INJECTIVE, FAST_FINALITY, STANDARD_FINALITY } from './cctp.js';
@@ -91,25 +92,24 @@ async function waitForInjectiveEvmUsdcBalance({
 }
 
 function walletClient(chain) {
-  if (!window.ethereum) {
-    throw new Error('No wallet detected. Connect MetaMask to bridge.');
-  }
+  const provider = getActiveEvmProvider();
   return createWalletClient({
     chain: viemChain(chain),
-    transport: custom(window.ethereum),
+    transport: custom(provider),
   });
 }
 
 async function ensureChain(chain) {
+  const provider = getActiveEvmProvider();
   const hexId = '0x' + chain.id.toString(16);
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: hexId }],
     });
   } catch (err) {
     if (err.code === 4902 || err?.data?.originalError?.code === 4902) {
-      await window.ethereum.request({
+      await provider.request({
         method: 'wallet_addEthereumChain',
         params: [{
           chainId: hexId,

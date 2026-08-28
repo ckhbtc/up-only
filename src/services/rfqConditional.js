@@ -21,6 +21,7 @@ import {
 } from './rfqConstants.js';
 import { broadcastViaAuthz } from './trade.js';
 import { createUpOnlyCid } from './tradeCid.js';
+import { getActiveEvmProvider } from './evmWalletProvider.js';
 
 const NETWORK = Network.MainnetSentry;
 const endpoints = getNetworkEndpoints(NETWORK);
@@ -335,19 +336,19 @@ export async function cancelActiveConditionalOrdersForMarket({
 }
 
 async function ensureInjectiveSigningChain() {
-  if (!window.ethereum) throw new Error('No wallet detected');
+  const provider = getActiveEvmProvider();
 
-  const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+  const currentChain = await provider.request({ method: 'eth_chainId' });
   if (parseInt(currentChain, 16) === RFQ_EVM_CHAIN_ID) return RFQ_EVM_CHAIN_ID;
 
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: `0x${RFQ_EVM_CHAIN_ID.toString(16)}` }],
     });
   } catch (err) {
     if (err?.code !== 4902) throw err;
-    await window.ethereum.request({
+    await provider.request({
       method: 'wallet_addEthereumChain',
       params: [{
         chainId: `0x${RFQ_EVM_CHAIN_ID.toString(16)}`,
@@ -359,7 +360,7 @@ async function ensureInjectiveSigningChain() {
     });
   }
 
-  const recheck = await window.ethereum.request({ method: 'eth_chainId' });
+  const recheck = await provider.request({ method: 'eth_chainId' });
   if (parseInt(recheck, 16) !== RFQ_EVM_CHAIN_ID) {
     throw new Error('Please switch to Injective (chain ID 1776) in your wallet');
   }
@@ -370,9 +371,9 @@ export async function signConditionalOrderIntent(intent, {
   expectedEthAddress,
   evmChainId = RFQ_EVM_CHAIN_ID,
 } = {}) {
-  if (!window.ethereum) throw new Error('No wallet detected');
+  const provider = getActiveEvmProvider();
   const activeChainId = await ensureInjectiveSigningChain();
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const accounts = await provider.request({ method: 'eth_requestAccounts' });
   const from = accounts?.[0];
   if (!from) throw new Error('No wallet account available for TP signature');
   if (expectedEthAddress && from.toLowerCase() !== expectedEthAddress.toLowerCase()) {
@@ -382,7 +383,7 @@ export async function signConditionalOrderIntent(intent, {
   const typedData = buildSignedTakerIntentTypedData(intent, {
     evmChainId: evmChainId || activeChainId,
   });
-  return window.ethereum.request({
+  return provider.request({
     method: 'eth_signTypedData_v4',
     params: [from, JSON.stringify(typedData)],
   });

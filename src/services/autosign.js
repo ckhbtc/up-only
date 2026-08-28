@@ -25,6 +25,7 @@ import {
   buildRevokeMessages,
   GRANT_EXPIRATION_S,
 } from './authzMessages.js';
+import { getActiveEvmProvider } from './evmWalletProvider.js';
 
 const NETWORK = Network.MainnetSentry;
 const endpoints = getNetworkEndpoints(NETWORK);
@@ -43,8 +44,9 @@ function hexToBytes(hex) {
 
 // Account isn't on chain yet → derive its compressed pubkey from a personal_sign.
 async function recoverPubKeyFromWallet(ethAddress) {
+  const provider = getActiveEvmProvider();
   const msg = `Injective account verification: ${ethAddress}`;
-  const sig = await window.ethereum.request({
+  const sig = await provider.request({
     method: 'personal_sign',
     params: [msg, ethAddress],
   });
@@ -71,19 +73,19 @@ async function fetchTxContext(injAddress) {
 }
 
 async function ensureInjectiveNetwork(onProgress) {
-  if (!window.ethereum) throw new Error('No wallet detected');
+  const provider = getActiveEvmProvider();
 
-  const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+  const currentChain = await provider.request({ method: 'eth_chainId' });
   if (parseInt(currentChain, 16) !== 1776) {
     onProgress?.('Switching to Injective network...');
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: '0x6f0' }],
       });
     } catch {
       try {
-        await window.ethereum.request({
+        await provider.request({
           method: 'wallet_addEthereumChain',
           params: [{
             chainId: '0x6f0',
@@ -97,7 +99,7 @@ async function ensureInjectiveNetwork(onProgress) {
         // Some wallets reject the add but actually switch - verify below.
       }
     }
-    const recheck = await window.ethereum.request({ method: 'eth_chainId' });
+    const recheck = await provider.request({ method: 'eth_chainId' });
     if (parseInt(recheck, 16) !== 1776) {
       throw new Error('Please switch to Injective (chain ID 1776) in your wallet');
     }
@@ -105,13 +107,14 @@ async function ensureInjectiveNetwork(onProgress) {
 }
 
 async function signAndBroadcastEip712({ injAddress, msgs, memo, onProgress, failureLabel }) {
+  const provider = getActiveEvmProvider();
   const { accountNumber, sequence, pubKey, timeoutHeight } = await fetchTxContext(injAddress);
 
   await ensureInjectiveNetwork(onProgress);
 
-  // evmChainId must come from MetaMask at sign-time, not be hardcoded.
+  // evmChainId must come from the selected wallet at sign-time, not be hardcoded.
   const evmChainId = parseInt(
-    await window.ethereum.request({ method: 'eth_chainId' }), 16
+    await provider.request({ method: 'eth_chainId' }), 16
   );
 
   const typedData = getEip712TypedData({
@@ -126,7 +129,7 @@ async function signAndBroadcastEip712({ injAddress, msgs, memo, onProgress, fail
     evmChainId,
   });
 
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const accounts = await provider.request({ method: 'eth_requestAccounts' });
   const from = accounts[0];
 
   let resolvedPubKey = pubKey;
@@ -136,7 +139,7 @@ async function signAndBroadcastEip712({ injAddress, msgs, memo, onProgress, fail
   }
 
   onProgress?.('Confirm in your wallet...');
-  const sig = await window.ethereum.request({
+  const sig = await provider.request({
     method: 'eth_signTypedData_v4',
     params: [from, JSON.stringify(typedData)],
   });
