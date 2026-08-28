@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import { connectWallet, onAccountsChanged } from '../services/wallet';
+import {
+  connectEvmWallet,
+  disconnectEvmWallet,
+} from '../services/evmWalletProvider.js';
 import { fetchBalances } from '../services/injective';
 import { clearGrantee } from '../services/grantee';
 import { visibleUsdcBalanceState } from './walletBalance.js';
@@ -24,6 +28,7 @@ const useWalletStore = create((set, get) => ({
   ethAddress: null,
   injAddress: null,
   subaccountId: null,
+  walletLabel: null,
   connected: false,
   connecting: false,
   balances: null,
@@ -36,13 +41,14 @@ const useWalletStore = create((set, get) => ({
     set({ connecting: true, error: null });
     try {
       const prevInjAddress = get().injAddress;
+      const { label: walletLabel } = await connectEvmWallet();
       const { ethAddress, injAddress, subaccountId } = await connectWallet();
 
       // If the connected wallet changed (or is new), wipe any lingering session
       // bound to a previous granter before we expose the new wallet state.
       if (prevInjAddress && prevInjAddress !== injAddress) clearSession(prevInjAddress);
 
-      set({ ethAddress, injAddress, subaccountId, connected: true, connecting: false });
+      set({ ethAddress, injAddress, subaccountId, walletLabel, connected: true, connecting: false });
 
       get().refreshBalances();
 
@@ -53,7 +59,7 @@ const useWalletStore = create((set, get) => ({
         if (!info) {
           clearAccountsChangedListener();
           clearSession(prev);
-          set({ ethAddress: null, injAddress: null, subaccountId: null, connected: false, balances: null, usdcBalance: 0, usdcBalanceFloor: null, usdcBalanceFloorExpiresAt: 0 });
+          set({ ethAddress: null, injAddress: null, subaccountId: null, walletLabel: null, connected: false, balances: null, usdcBalance: 0, usdcBalanceFloor: null, usdcBalanceFloorExpiresAt: 0 });
         } else if (info.injAddress !== prev) {
           // Different wallet swapped in - the old session must not carry over.
           clearSession(prev);
@@ -71,13 +77,14 @@ const useWalletStore = create((set, get) => ({
     }
   },
 
-  disconnect: () => {
+  disconnect: async () => {
     clearAccountsChangedListener();
     clearSession(get().injAddress);
     set({
       ethAddress: null,
       injAddress: null,
       subaccountId: null,
+      walletLabel: null,
       connected: false,
       balances: null,
       usdcBalance: 0,
@@ -85,6 +92,11 @@ const useWalletStore = create((set, get) => ({
       usdcBalanceFloorExpiresAt: 0,
       error: null,
     });
+    try {
+      await disconnectEvmWallet();
+    } catch (err) {
+      console.warn('Wallet provider disconnect failed:', err.message || err);
+    }
   },
 
   refreshBalances: async () => {
