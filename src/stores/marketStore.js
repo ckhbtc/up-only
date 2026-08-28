@@ -16,6 +16,7 @@ import {
   applyLiveMarketPrice,
   subscribeLiveMarketPrices,
 } from '../services/liveMarketPrices';
+import { filterRfqTradeableMarkets } from '../services/rfqMarketAvailability';
 import {
   applyOptimisticCloses,
   mergeFetchedAndOptimisticPositions,
@@ -158,13 +159,15 @@ const useMarketStore = create((set, get) => ({
 
       let markets = [];
       if (verifiedMarketsResult.status === 'fulfilled') {
-        markets = selectVerifiedMarkets(allMarkets.value, verifiedMarketsResult.value);
+        markets = filterRfqTradeableMarkets(
+          selectVerifiedMarkets(allMarkets.value, verifiedMarketsResult.value)
+        );
       } else {
         console.warn('Failed to fetch TrueCurrent verified markets:', verifiedMarketsResult.reason);
       }
 
       if (markets.length === 0) {
-        markets = selectFallbackMarkets(allMarkets.value);
+        markets = filterRfqTradeableMarkets(selectFallbackMarkets(allMarkets.value));
       }
 
       const { prices, summaries } = await fetchDisplayPrices(markets);
