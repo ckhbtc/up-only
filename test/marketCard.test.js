@@ -7,6 +7,7 @@ import { createServer } from 'vite';
 
 let vite;
 let MarketCard;
+let OracleStaleBadgeView;
 
 before(async () => {
   vite = await createServer({
@@ -16,6 +17,7 @@ before(async () => {
     server: { hmr: false, middlewareMode: true, ws: false },
   });
   ({ default: MarketCard } = await vite.ssrLoadModule('/src/components/MarketCard.jsx'));
+  ({ OracleStaleBadgeView } = await vite.ssrLoadModule('/src/components/OracleStaleBadge.jsx'));
 });
 
 after(async () => {
@@ -53,4 +55,16 @@ test('market card omits cash-down and position-size labels', () => {
 
   assert.doesNotMatch(markup, /Cash down|Position size|up-position-strip/i);
   assert.match(markup, /aria-label="BTC UpOnly amount"/);
+});
+
+test('closed oracle badge exposes the warning as an accessible tooltip', () => {
+  const markup = renderToStaticMarkup(createElement(OracleStaleBadgeView));
+
+  assert.match(markup, /up-market-badge-oracle-stale/);
+  assert.match(markup, />CLOSED</);
+  assert.match(markup, /role="tooltip"/);
+  assert.match(
+    markup,
+    /The oracle for this market is currently closed\. You may have issues getting filled, but feel free to YOLO it anyway\./,
+  );
 });

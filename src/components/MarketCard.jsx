@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CoinLogo from './CoinLogo';
+import OracleStaleBadge from './OracleStaleBadge';
 import PriceText from './PriceText';
 import { formatPrice, formatUsdcBalance, liquidationPrice } from '../data/mockData';
 import { formatSpendableAmountInput, sanitizeAmountInput } from '../services/amountInput';
@@ -31,6 +32,7 @@ export default function MarketCard({
   onAuthorize,
   onConfirm,
 }) {
+  const marketCardRef = useRef(null);
   const [stake, setStake] = useState('');
   const price = Number(market.price) || 0;
   const priceDecimals = market.priceDecimals;
@@ -148,7 +150,11 @@ export default function MarketCard({
 
   return (
     <article
-      ref={cardRef}
+      ref={(node) => {
+        marketCardRef.current = node;
+        if (typeof cardRef === 'function') cardRef(node);
+        else if (cardRef) cardRef.current = node;
+      }}
       className="up-card"
     >
       <div className="up-hot-ribbon">NO SHORTS - NO SLIDERS - MAX ONLY</div>
@@ -161,6 +167,7 @@ export default function MarketCard({
             <div className="up-market-badges" aria-label={`${market.symbol} trading constraints`}>
               <span className="up-market-badge up-market-badge-direction">Up</span>
               <span className="up-market-badge up-market-badge-leverage">{maxConfig.label}</span>
+              <OracleStaleBadge market={market} cardRef={marketCardRef} />
             </div>
           </div>
         </div>

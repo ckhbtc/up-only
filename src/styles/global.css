@@ -942,6 +942,46 @@ input:focus-visible {
   background: var(--yellow);
 }
 
+.up-market-badge-oracle-stale {
+  appearance: none;
+  background: var(--orange);
+  cursor: help;
+  position: relative;
+}
+
+.up-oracle-stale-tooltip {
+  background: var(--text-primary);
+  border: 3px solid var(--border);
+  box-shadow: 5px 5px 0 var(--orange);
+  color: var(--bg-card);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 10px 12px;
+  pointer-events: none;
+  position: absolute;
+  left: -4px;
+  text-align: left;
+  text-transform: none;
+  top: calc(100% + 9px);
+  transform: translateY(-3px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s ease;
+  visibility: hidden;
+  white-space: normal;
+  width: min(280px, calc(100vw - 64px));
+  z-index: 20;
+}
+
+.up-market-badge-oracle-stale:hover .up-oracle-stale-tooltip,
+.up-market-badge-oracle-stale:focus-visible .up-oracle-stale-tooltip,
+.up-market-badge-oracle-stale:focus .up-oracle-stale-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
 .up-heat {
   background: var(--accent-light);
   border: 3px solid var(--border);
