@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { formatUsdcBalance } from '../data/mockData.js';
 import { txExplorerUrl } from '../services/explorer.js';
 import {
   fetchDisplayedTradeHistory,
   listLocalTradeHistory,
   unlockAndFetchTradeHistory,
 } from '../services/tradeHistory.js';
+import { tradeHistoryDisplay } from '../services/tradeHistoryDisplay.js';
 import { formatLocalTradeTimestamp } from '../services/tradeHistoryTime.js';
 
 const HISTORY_REFRESH_MS = 5_000;
@@ -16,14 +16,6 @@ function tradeStatusLabel(status) {
   if (status === 'quoted') return 'Quoted';
   if (status === 'broadcasting') return 'Broadcasting';
   return 'Submitted';
-}
-
-function formatSignedUsd(value) {
-  if (value === null || value === undefined || value === '') return '—';
-  const number = Number(value);
-  if (!Number.isFinite(number)) return '—';
-  const sign = number > 0 ? '+' : number < 0 ? '-' : '';
-  return `${sign}$${formatUsdcBalance(Math.abs(number))}`;
 }
 
 export default function TradeHistoryModal({ ethAddress, injAddress, markets = [], onClose }) {
@@ -94,33 +86,21 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
             <div className="up-trade-history-list">
               <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
                 <span>Pair</span>
-                <span>Amount</span>
-                <span>rPNL</span>
+                <span>Action</span>
+                <span>Amount / rPNL</span>
                 <span>Status</span>
               </div>
               {records.map(record => {
                 const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const amount = record.action === 'close' && record.status === 'confirmed'
-                  ? record.returnedAmount
-                  : record.stake;
-                const margin = amount === null || amount === undefined || amount === ''
-                  ? null
-                  : formatUsdcBalance(amount);
-                const realizedPnl = record.action === 'close'
-                  ? formatSignedUsd(record.realizedPnl)
-                  : '—';
-                const realizedPnlValue = Number(record.realizedPnl);
-                const pnlClass = Number.isFinite(realizedPnlValue)
-                  ? (realizedPnlValue < 0 ? 'is-negative' : 'is-positive')
-                  : 'is-empty';
+                const display = tradeHistoryDisplay(record);
                 const statusLabel = tradeStatusLabel(record.status);
                 const statusClass = `up-trade-history-status is-${record.status}`;
                 const localTime = formatLocalTradeTimestamp(record.createdAt);
                 return (
                   <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
                     <strong className="up-trade-history-pair">{symbol}</strong>
-                    <span className="up-trade-history-margin">{margin ? `$${margin}` : '—'}</span>
-                    <span className={`up-trade-history-pnl ${pnlClass}`}>{realizedPnl}</span>
+                    <span className={`up-trade-history-action ${display.actionClass}`}>{display.actionLabel}</span>
+                    <span className={`up-trade-history-value ${display.valueClass}`}>{display.value}</span>
                     <div className="up-trade-history-result">
                       {record.txHash ? (
                         <a
