@@ -91,3 +91,11 @@ test('header actions share one fixed control height', async () => {
     assert.equal(usesSharedHeight, true, `${selector} should use the shared height`);
   }
 });
+
+test('wallet dropdown has no dead hover gap below its trigger', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const dropdownRule = css.match(/\.wallet-menu-dropdown\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(dropdownRule, /top:\s*100%\s*;/);
+  assert.doesNotMatch(dropdownRule, /top:\s*calc\(100%\s*\+\s*[^)]*\)/);
+});

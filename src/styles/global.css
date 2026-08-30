@@ -724,7 +724,7 @@ input:focus-visible {
   padding: 6px;
   position: absolute;
   right: 0;
-  top: calc(100% + 8px);
+  top: 100%;
   z-index: 220;
 }
 
