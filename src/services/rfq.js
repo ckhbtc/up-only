@@ -1816,10 +1816,12 @@ export async function tradeOpenRfq({
   market: providedMarket = null,
   oraclePrice: providedOraclePrice = null,
   onProgress = null,
+  cid = createUpOnlyCid(),
 }) {
   const timing = createRfqTiming('rfq-open', {
     marketId,
     side,
+    cid,
   });
   const session = requireSession(granterAddress);
   if (Number(session.scopeVersion || 1) < AUTHZ_SCOPE_VERSION) {
@@ -1868,6 +1870,7 @@ export async function tradeOpenRfq({
       input,
       onProgress,
       timing,
+      cid,
       reviewPrepared: async ({ prepared, input: preparedInput }) => {
         const freshMarkPrice = await resolveRfqOraclePrice({
           market,
@@ -1950,10 +1953,12 @@ export async function tradeCloseRfq({
   market: providedMarket = null,
   oraclePrice: providedOraclePrice = null,
   onProgress = null,
+  cid = createUpOnlyCid(),
 }) {
   const timing = createRfqTiming('rfq-cash-out', {
     marketId,
     side,
+    cid,
   });
   const session = requireSession(granterAddress);
   if (Number(session.scopeVersion || 1) < AUTHZ_SCOPE_VERSION) {
@@ -1985,6 +1990,7 @@ export async function tradeCloseRfq({
       input,
       onProgress,
       timing,
+      cid,
     });
     try {
       const cleanupStarted = timingNow();
