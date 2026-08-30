@@ -108,6 +108,20 @@ function LoadingStatus({ status }) {
 }
 
 function ToastStatus({ status }) {
+  if (status.type === 'success' && status.txHash) {
+    return (
+      <a
+        className="tx-status-toast tx-status-success is-link"
+        href={txExplorerUrl(status.txHash)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`View ${status.message} transaction on explorer`}
+      >
+        {status.message}
+      </a>
+    );
+  }
+
   return (
     <div className={`tx-status-toast tx-status-${status.type}`}>
       {status.type === 'warning' && '! '}

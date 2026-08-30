@@ -33,6 +33,18 @@ test('completed transaction toasts are anchored bottom right', async () => {
   assert.match(loadingRule, /top:/);
 });
 
+test('a successful transaction uses the whole toast as its explorer link', async () => {
+  const source = await readFile(new URL('../src/components/TransactionStatus.jsx', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+
+  assert.match(source, /status\.type === 'success' && status\.txHash/);
+  assert.match(source, /className="tx-status-toast tx-status-success is-link"/);
+  assert.match(source, /href=\{txExplorerUrl\(status\.txHash\)\}/);
+  assert.match(source, />\s*\{status\.message\}\s*<\/a>/);
+  assert.match(css, /\.tx-status-toast\.is-link\s*\{/);
+  assert.match(css, /text-decoration:\s*none/);
+});
+
 test('a new deployment offers a user-controlled bottom-right reload toast', async () => {
   const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const toastSource = await readFile(new URL('../src/components/AppUpdateToast.jsx', import.meta.url), 'utf8');

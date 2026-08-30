@@ -1268,6 +1268,20 @@ input:focus-visible {
   margin-left: 6px;
 }
 
+.tx-status-toast.is-link {
+  color: var(--green);
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.tx-status-toast.is-link:hover,
+.tx-status-toast.is-link:focus-visible {
+  box-shadow: 7px 7px 0 var(--border);
+  transform: translate(-2px, -2px);
+}
+
 .app-update-toast {
   align-items: center;
   animation: slide-up 0.3s ease;
