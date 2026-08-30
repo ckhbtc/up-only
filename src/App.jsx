@@ -14,6 +14,7 @@ import BridgeModal from './components/BridgeModal';
 import Confetti from './components/Confetti';
 import TransactionStatus from './components/TransactionStatus';
 import WalletSelector from './components/WalletSelector';
+import TradeHistoryModal from './components/TradeHistoryModal';
 import {
   buildRfqCloseInput,
   primeRfqAccountCache,
@@ -29,6 +30,11 @@ import { closePositionsSequentially } from './services/closeAllPositions';
 import { createTradeLock } from './services/tradeLock';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import { startWalletBalanceRefresh } from './services/walletRefresh';
+import { createUpOnlyCid } from './services/tradeCid';
+import {
+  classifyTradeFailure,
+  recordTradeHistoryEvent,
+} from './services/tradeHistory';
 import useWalletStore from './stores/walletStore';
 import useMarketStore from './stores/marketStore';
 import useSessionStore from './stores/sessionStore';
@@ -89,6 +95,7 @@ export default function App() {
   const [confetti, setConfetti] = useState(false);
   const [showBridge, setShowBridge] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const [showTradeHistory, setShowTradeHistory] = useState(false);
   const [connectingWalletId, setConnectingWalletId] = useState(null);
   const [walletConnectError, setWalletConnectError] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -370,6 +377,21 @@ export default function App() {
 
     const needsTakeProfitSignature = bet.targetPrice && Number(bet.targetPrice) > 0;
     const marketId = bet.market.marketId;
+    const cid = createUpOnlyCid();
+    const tradeCreatedAt = Date.now();
+    const recordOpen = (updates) => recordTradeHistoryEvent({
+      cid,
+      wallet: injAddress,
+      marketId,
+      symbol: bet.market.symbol,
+      action: 'open',
+      direction: 'long',
+      stake: String(bet.stake),
+      leverage: String(bet.leverage),
+      createdAt: tradeCreatedAt,
+      updatedAt: Date.now(),
+      ...updates,
+    });
     let tradeReleased = false;
     const releaseTrade = () => {
       if (tradeReleased) return;
@@ -382,6 +404,7 @@ export default function App() {
       type: 'loading',
       message: `UpOnly order submitted for ${bet.market.symbol}`,
     });
+    recordOpen({ status: 'submitted' });
 
     let openConfirmed = false;
     let openMatched = false;
@@ -427,6 +450,7 @@ export default function App() {
 
     try {
       const result = await tradeOpenRfq({
+        cid,
         granterAddress: injAddress,
         marketId: bet.market.marketId,
         side: UP_ONLY_SIDE,
@@ -434,23 +458,49 @@ export default function App() {
         leverage: bet.leverage,
         tpPrice: bet.targetPrice,
         market: bet.market,
-        onProgress: ({ phase, result: progressResult, input: progressInput }) => {
+        onProgress: ({ phase, prepared, result: progressResult, input: progressInput }) => {
           if (phase === 'matched') {
+            recordOpen({
+              status: 'quoted',
+              quantity: progressInput?.quantity,
+              worstPrice: progressInput?.worstPrice,
+              quotePrice: prepared?.quotes?.[0]?.price,
+              rfqId: prepared?.rfqId,
+            });
             showOptimisticOpen(progressInput);
           }
           if (phase === 'confirmed') {
+            recordOpen({
+              status: 'confirmed',
+              quantity: progressInput?.quantity,
+              worstPrice: progressInput?.worstPrice,
+              quotePrice: prepared?.quotes?.[0]?.price,
+              rfqId: prepared?.rfqId,
+              txHash: progressResult?.txHash,
+              confirmedAt: Date.now(),
+            });
             settleOpenConfirmed(progressResult);
           }
         },
       });
 
       const status = getOpenTradeStatus(result);
+      recordOpen({
+        status: 'confirmed',
+        quantity: result?.input?.quantity,
+        worstPrice: result?.input?.worstPrice,
+        quotePrice: result?.prepared?.quotes?.[0]?.price,
+        rfqId: result?.prepared?.rfqId,
+        txHash: result?.txHash,
+        confirmedAt: Date.now(),
+      });
       if (!openConfirmed) settleOpenConfirmed(result);
       setTxStatus(status);
 
       clearTxStatusSoon();
     } catch (err) {
       const message = userFacingTradeError(err.message);
+      recordOpen({ status: 'failed', ...classifyTradeFailure(err.message) });
       if (optimisticPositionId) {
         useMarketStore.getState().removeOptimisticPosition(optimisticPositionId);
       }
@@ -473,7 +523,25 @@ export default function App() {
     if (!connected || !position.market) return;
     if (!beginTrade()) return;
 
+    const cid = createUpOnlyCid();
+    const tradeCreatedAt = Date.now();
+    const recordClose = (updates) => recordTradeHistoryEvent({
+      cid,
+      wallet: injAddress,
+      marketId: position.marketId,
+      symbol: position.asset || position.symbol,
+      action: 'close',
+      direction: position.side === 'long' ? 'short' : 'long',
+      stake: String(position.margin ?? position.stake ?? ''),
+      leverage: position.leverage ? String(position.leverage) : null,
+      quantity: String(position.quantity),
+      createdAt: tradeCreatedAt,
+      updatedAt: Date.now(),
+      ...updates,
+    });
+
     setTxStatus({ type: 'loading', message: 'Submitting cash-out order' });
+    recordClose({ status: 'submitted' });
 
     let closeConfirmed = false;
     let closeMatched = false;
@@ -510,6 +578,7 @@ export default function App() {
 
     try {
       const result = await tradeCloseRfq({
+        cid,
         granterAddress: injAddress,
         marketId: position.marketId,
         side: position.side,
@@ -518,21 +587,44 @@ export default function App() {
         oraclePrice: position.markPrice
           || position.currentPrice
           || latestCachedPrice(position.marketId, position.market?.price),
-        onProgress: ({ phase, result: progressResult }) => {
+        onProgress: ({ phase, prepared, result: progressResult, input: progressInput }) => {
           if (phase === 'matched') {
+            recordClose({
+              status: 'quoted',
+              worstPrice: progressInput?.worstPrice,
+              quotePrice: prepared?.quotes?.[0]?.price,
+              rfqId: prepared?.rfqId,
+            });
             showOptimisticClose();
           }
           if (phase === 'confirmed') {
+            recordClose({
+              status: 'confirmed',
+              worstPrice: progressInput?.worstPrice,
+              quotePrice: prepared?.quotes?.[0]?.price,
+              rfqId: prepared?.rfqId,
+              txHash: progressResult?.txHash,
+              confirmedAt: Date.now(),
+            });
             settleCloseConfirmed(progressResult);
           }
         },
       });
 
       if (!closeConfirmed) settleCloseConfirmed(result);
+      recordClose({
+        status: 'confirmed',
+        worstPrice: result?.input?.worstPrice,
+        quotePrice: result?.prepared?.quotes?.[0]?.price,
+        rfqId: result?.prepared?.rfqId,
+        txHash: result?.txHash,
+        confirmedAt: Date.now(),
+      });
 
       clearTxStatusSoon();
     } catch (err) {
       const message = userFacingTradeError(err.message);
+      recordClose({ status: 'failed', ...classifyTradeFailure(err.message) });
       if (closeMatched) {
         useMarketStore.getState().removeOptimisticClosedPosition(optimisticCloseId, position);
       }
@@ -558,16 +650,66 @@ export default function App() {
             message: `Closing ${index + 1} of ${total}: ${position.asset}`,
           });
         },
-        closePosition: pos => tradeCloseRfq({
-          granterAddress: injAddress,
-          marketId: pos.marketId,
-          side: pos.side,
-          quantity: pos.quantity,
-          market: pos.market,
-          oraclePrice: pos.markPrice
-            || pos.currentPrice
-            || latestCachedPrice(pos.marketId, pos.market?.price),
-        }),
+        closePosition: async pos => {
+          const cid = createUpOnlyCid();
+          const createdAt = Date.now();
+          const record = updates => recordTradeHistoryEvent({
+            cid,
+            wallet: injAddress,
+            marketId: pos.marketId,
+            symbol: pos.asset || pos.symbol,
+            action: 'close',
+            direction: pos.side === 'long' ? 'short' : 'long',
+            stake: String(pos.margin ?? pos.stake ?? ''),
+            leverage: pos.leverage ? String(pos.leverage) : null,
+            quantity: String(pos.quantity),
+            createdAt,
+            updatedAt: Date.now(),
+            ...updates,
+          });
+          record({ status: 'submitted' });
+          try {
+            const result = await tradeCloseRfq({
+              cid,
+              granterAddress: injAddress,
+              marketId: pos.marketId,
+              side: pos.side,
+              quantity: pos.quantity,
+              market: pos.market,
+              oraclePrice: pos.markPrice
+                || pos.currentPrice
+                || latestCachedPrice(pos.marketId, pos.market?.price),
+              onProgress: ({ phase, prepared, result: progressResult, input }) => {
+                if (phase === 'matched') record({
+                  status: 'quoted',
+                  worstPrice: input?.worstPrice,
+                  quotePrice: prepared?.quotes?.[0]?.price,
+                  rfqId: prepared?.rfqId,
+                });
+                if (phase === 'confirmed') record({
+                  status: 'confirmed',
+                  worstPrice: input?.worstPrice,
+                  quotePrice: prepared?.quotes?.[0]?.price,
+                  rfqId: prepared?.rfqId,
+                  txHash: progressResult?.txHash,
+                  confirmedAt: Date.now(),
+                });
+              },
+            });
+            record({
+              status: 'confirmed',
+              worstPrice: result?.input?.worstPrice,
+              quotePrice: result?.prepared?.quotes?.[0]?.price,
+              rfqId: result?.prepared?.rfqId,
+              txHash: result?.txHash,
+              confirmedAt: Date.now(),
+            });
+            return result;
+          } catch (error) {
+            record({ status: 'failed', ...classifyTradeFailure(error.message) });
+            throw error;
+          }
+        },
         onClosed: ({ position }) => {
           useMarketStore.getState().addOptimisticClosedPosition(position);
         },
@@ -624,6 +766,7 @@ export default function App() {
         onSelectSearchResult={selectSearchResult}
         onConnect={openWalletSelector}
         onAddFunds={() => setShowBridge(true)}
+        onOpenTradeHistory={() => setShowTradeHistory(true)}
         onRevokeAutosign={handleRevokeAutosign}
         sessionActive={session.active}
         revokingAutosign={session.revoking}
@@ -694,6 +837,15 @@ export default function App() {
       </div>
 
       {showBridge && <BridgeModal onClose={() => setShowBridge(false)} />}
+
+      {showTradeHistory && connected && (
+        <TradeHistoryModal
+          ethAddress={ethAddress}
+          injAddress={injAddress}
+          markets={markets}
+          onClose={() => setShowTradeHistory(false)}
+        />
+      )}
 
       {showWalletSelector && (
         <WalletSelector

@@ -49,6 +49,7 @@ export default function TopBar({
   onSelectSearchResult,
   onConnect,
   onAddFunds,
+  onOpenTradeHistory,
   onRevokeAutosign,
   sessionActive,
   revokingAutosign,
@@ -273,6 +274,14 @@ export default function TopBar({
                       {revokingAutosign ? 'Revoking autosign...' : 'Revoke autosign'}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={onOpenTradeHistory}
+                    className="wallet-menu-item"
+                  >
+                    Trade history
+                  </button>
                   <button
                     type="button"
                     role="menuitem"
