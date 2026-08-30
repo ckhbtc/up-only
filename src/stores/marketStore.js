@@ -40,6 +40,8 @@ function withBffMetadata(chainMarket, bffMarket) {
     tokenName: bffMarket.name || '',
     logo: bffMarket.logo || '',
     slug: bffMarket.slug || '',
+    provider: bffMarket.provider || '',
+    oracleStatusId: bffMarket.oracleStatusId || '',
     priceDecimals: bffMarket.priceDecimals ?? chainMarket.priceDecimals ?? null,
   };
 }

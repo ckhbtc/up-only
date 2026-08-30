@@ -22,6 +22,8 @@ test('normalizeVerifiedDerivativeMarkets keeps active verified USDC perps', () =
         },
         priceDecimals: 4,
         slug: 'doge-usdc-perp',
+        provider: 'pythEquity',
+        oracleBase: '123',
       },
       {
         marketId: '0xhidden',
@@ -62,6 +64,8 @@ test('normalizeVerifiedDerivativeMarkets keeps active verified USDC perps', () =
       logo: 'https://example.com/doge.png',
       slug: 'doge-usdc-perp',
       priceDecimals: 4,
+      provider: 'pythEquity',
+      oracleStatusId: '123',
     },
   ]);
 });

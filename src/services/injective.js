@@ -157,6 +157,8 @@ export function normalizeVerifiedDerivativeMarkets(payload) {
       name: String(m?.baseToken?.name || ''),
       logo: String(m?.baseToken?.logo || ''),
       slug: String(m?.slug || ''),
+      provider: String(m?.provider || ''),
+      oracleStatusId: String(m?.oracleBase || ''),
       priceDecimals: normalizePriceDecimals(m?.priceDecimals)
         ?? priceDecimalsFromTickSize(m?.minPriceTickSize, m?.quoteToken?.decimals ?? QUOTE_DECIMALS),
     });
