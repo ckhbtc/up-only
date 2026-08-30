@@ -1357,6 +1357,10 @@ input:focus-visible {
   text-transform: uppercase;
 }
 
+.app-update-toast span {
+  white-space: nowrap;
+}
+
 .tx-status-success {
   background: var(--accent-light);
   color: var(--green);

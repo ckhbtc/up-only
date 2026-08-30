@@ -53,11 +53,13 @@ test('a new deployment offers a user-controlled bottom-right reload toast', asyn
 
   assert.match(appSource, /startAppVersionMonitor/);
   assert.match(appSource, /appUpdateAvailable && !tradeBusy && !txStatus/);
-  assert.match(toastSource, /A new version of UpOnly is available\. Please reload to keep using the app\./);
+  assert.match(toastSource, /New version available\./);
+  assert.doesNotMatch(toastSource, /Please reload to keep using the app/);
   assert.match(toastSource, /window\.location\.reload\(\)/);
   assert.match(toastRule, /bottom:/);
   assert.match(toastRule, /right:/);
   assert.match(toastRule, /position:\s*fixed/);
+  assert.match(css, /\.app-update-toast span\s*\{[^}]*white-space:\s*nowrap/s);
 });
 
 test('market-card confirmation returns the trade settlement promise', async () => {
