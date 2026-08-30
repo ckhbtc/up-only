@@ -2008,8 +2008,8 @@ input:focus-visible {
 }
 
 .up-trade-history-margin {
-  color: var(--text-primary);
-  font-family: var(--font-mono);
+  color: var(--green);
+  font-family: var(--font-heading);
   font-weight: 900;
   min-width: 0;
 }
@@ -2021,12 +2021,12 @@ input:focus-visible {
   display: inline-flex;
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 900;
   justify-content: center;
   justify-self: end;
   letter-spacing: 0.4px;
-  padding: 4px 6px;
+  padding: 7px 10px;
   text-decoration: none;
   text-transform: uppercase;
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { formatUsdcBalance } from '../data/mockData.js';
 import { txExplorerUrl } from '../services/explorer.js';
 import {
   fetchDisplayedTradeHistory,
@@ -14,13 +15,6 @@ function tradeStatusLabel(status) {
   if (status === 'quoted') return 'Quoted';
   if (status === 'broadcasting') return 'Broadcasting';
   return 'Submitted';
-}
-
-function formatValue(value, suffix = '') {
-  if (value === null || value === undefined || value === '') return null;
-  const number = Number(value);
-  if (!Number.isFinite(number)) return `${value}${suffix}`;
-  return `${number.toLocaleString(undefined, { maximumFractionDigits: 8 })}${suffix}`;
 }
 
 export default function TradeHistoryModal({ ethAddress, injAddress, markets = [], onClose }) {
@@ -91,12 +85,14 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
             <div className="up-trade-history-list">
               <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
                 <span>Pair</span>
-                <span>Margin</span>
+                <span>Amount</span>
                 <span>Status</span>
               </div>
               {records.map(record => {
                 const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const margin = formatValue(record.stake);
+                const margin = record.stake === null || record.stake === undefined || record.stake === ''
+                  ? null
+                  : formatUsdcBalance(record.stake);
                 const statusLabel = tradeStatusLabel(record.status);
                 const statusClass = `up-trade-history-status is-${record.status}`;
                 return (
