@@ -18,6 +18,8 @@ const FIELDS = [
   'quantity',
   'quotePrice',
   'worstPrice',
+  'returnedAmount',
+  'realizedPnl',
   'rfqId',
   'txHash',
   'errorCode',
@@ -68,6 +70,8 @@ export function normalizeTradeRecord(record, { wallet = null } = {}) {
     quantity: text(record.quantity, 60),
     quotePrice: text(record.quotePrice, 60),
     worstPrice: text(record.worstPrice, 60),
+    returnedAmount: text(record.returnedAmount, 60),
+    realizedPnl: text(record.realizedPnl, 60),
     rfqId: text(record.rfqId, 40),
     txHash: text(record.txHash, 100),
     errorCode: text(record.errorCode, 40),
@@ -111,6 +115,8 @@ export function createTradeHistoryStore({ database, path } = {}) {
       quantity TEXT,
       quotePrice TEXT,
       worstPrice TEXT,
+      returnedAmount TEXT,
+      realizedPnl TEXT,
       rfqId TEXT,
       txHash TEXT,
       errorCode TEXT,
@@ -126,6 +132,10 @@ export function createTradeHistoryStore({ database, path } = {}) {
       ON trade_history(txHash) WHERE txHash IS NOT NULL;
   `);
 
+  const columns = new Set(db.prepare('PRAGMA table_info(trade_history)').all().map(column => column.name));
+  if (!columns.has('returnedAmount')) db.exec('ALTER TABLE trade_history ADD COLUMN returnedAmount TEXT');
+  if (!columns.has('realizedPnl')) db.exec('ALTER TABLE trade_history ADD COLUMN realizedPnl TEXT');
+
   const getStatement = db.prepare('SELECT * FROM trade_history WHERE cid = ?');
   const listStatement = db.prepare(`
     SELECT * FROM trade_history
@@ -136,11 +146,11 @@ export function createTradeHistoryStore({ database, path } = {}) {
   const insertStatement = db.prepare(`
     INSERT INTO trade_history (
       cid, wallet, marketId, symbol, action, direction, status,
-      stake, leverage, quantity, quotePrice, worstPrice, rfqId, txHash,
+      stake, leverage, quantity, quotePrice, worstPrice, returnedAmount, realizedPnl, rfqId, txHash,
       errorCode, errorMessage, createdAt, updatedAt, confirmedAt, source
     ) VALUES (
       @cid, @wallet, @marketId, @symbol, @action, @direction, @status,
-      @stake, @leverage, @quantity, @quotePrice, @worstPrice, @rfqId, @txHash,
+      @stake, @leverage, @quantity, @quotePrice, @worstPrice, @returnedAmount, @realizedPnl, @rfqId, @txHash,
       @errorCode, @errorMessage, @createdAt, @updatedAt, @confirmedAt, @source
     )
     ON CONFLICT(cid) DO UPDATE SET
@@ -155,6 +165,8 @@ export function createTradeHistoryStore({ database, path } = {}) {
       quantity = excluded.quantity,
       quotePrice = excluded.quotePrice,
       worstPrice = excluded.worstPrice,
+      returnedAmount = excluded.returnedAmount,
+      realizedPnl = excluded.realizedPnl,
       rfqId = excluded.rfqId,
       txHash = excluded.txHash,
       errorCode = excluded.errorCode,
@@ -227,6 +239,7 @@ export function createTradeHistoryStore({ database, path } = {}) {
 
 export function settlementToTradeRecord(settlement) {
   if (!String(settlement?.cid || '').startsWith(UP_ONLY_CID_PREFIX)) return null;
+  const action = String(settlement.margin || '0') === '0' ? 'close' : 'open';
   const confirmedAt = timestamp(
     settlement.transactionTime || settlement.eventTime || settlement.updatedAt || settlement.createdAt,
   );
@@ -234,10 +247,10 @@ export function settlementToTradeRecord(settlement) {
     cid: settlement.cid,
     wallet: settlement.taker,
     marketId: settlement.marketId,
-    action: String(settlement.margin || '0') === '0' ? 'close' : 'open',
+    action,
     direction: settlement.direction,
     status: 'confirmed',
-    stake: settlement.margin,
+    stake: action === 'open' ? settlement.margin : null,
     quantity: settlement.quantity,
     worstPrice: settlement.worstPrice,
     rfqId: settlement.rfqId,

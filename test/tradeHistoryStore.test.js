@@ -87,8 +87,66 @@ test('settlement conversion accepts only UpOnly CIDs and derives open or close',
 
   assert.equal(opened.action, 'open');
   assert.equal(closed.action, 'close');
+  assert.equal(closed.stake, null);
   assert.equal(opened.status, 'confirmed');
   assert.equal(opened.rfqId, '12');
+});
+
+test('trade history store persists returned amount and realized pnl', () => {
+  const store = createTradeHistoryStore({ database: new DatabaseSync(':memory:') });
+
+  store.upsert({
+    cid: 'up-only-close-metrics',
+    wallet: walletA,
+    marketId: 'uni-market',
+    symbol: 'UNI',
+    action: 'close',
+    status: 'confirmed',
+    returnedAmount: '4.906950176095672850',
+    realizedPnl: '-0.093049823904327150',
+    createdAt: 1_800_000_000_000,
+    updatedAt: 1_800_000_000_100,
+    source: 'indexer',
+  });
+
+  const [record] = store.list(walletA);
+  assert.equal(record.returnedAmount, '4.906950176095672850');
+  assert.equal(record.realizedPnl, '-0.093049823904327150');
+});
+
+test('trade history store migrates an existing database for close metrics', () => {
+  const database = new DatabaseSync(':memory:');
+  database.exec(`
+    CREATE TABLE trade_history (
+      cid TEXT PRIMARY KEY,
+      wallet TEXT NOT NULL,
+      marketId TEXT NOT NULL,
+      symbol TEXT,
+      action TEXT,
+      direction TEXT,
+      status TEXT NOT NULL,
+      stake TEXT,
+      leverage TEXT,
+      quantity TEXT,
+      quotePrice TEXT,
+      worstPrice TEXT,
+      rfqId TEXT,
+      txHash TEXT,
+      errorCode TEXT,
+      errorMessage TEXT,
+      createdAt INTEGER NOT NULL,
+      updatedAt INTEGER NOT NULL,
+      confirmedAt INTEGER,
+      source TEXT NOT NULL
+    )
+  `);
+
+  const store = createTradeHistoryStore({ database });
+  const columns = database.prepare('PRAGMA table_info(trade_history)').all().map(column => column.name);
+
+  assert.ok(columns.includes('returnedAmount'));
+  assert.ok(columns.includes('realizedPnl'));
+  store.close();
 });
 
 test('authoritative indexer confirmation overrides a newer client broadcasting timestamp', () => {

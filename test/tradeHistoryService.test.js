@@ -48,6 +48,7 @@ test('history reconciliation paginates settlements and filters other CIDs', asyn
   const service = createTradeHistoryService({
     store,
     now: () => 1_800_000_200_000,
+    fetchSettlementMetrics: async () => null,
     rfqApi: {
       async fetchSettlements(params) {
         calls.push(params);
@@ -63,6 +64,51 @@ test('history reconciliation paginates settlements and filters other CIDs', asyn
   assert.equal(records.length, 2);
   assert.equal(records[0].action, 'close');
   assert.equal(records[1].action, 'open');
+});
+
+test('history reconciliation enriches confirmed closes with returned cash and realized pnl', async () => {
+  const store = createTradeHistoryStore({ database: new DatabaseSync(':memory:') });
+  const metricCalls = [];
+  const service = createTradeHistoryService({
+    store,
+    now: () => 1_800_000_200_000,
+    rfqApi: {
+      async fetchSettlements() {
+        return {
+          settlements: [{
+            cid: 'up-only-uni-close',
+            taker: wallet,
+            marketId: 'uni-market',
+            direction: 'short',
+            margin: '0',
+            quantity: '9.3',
+            worstPrice: '5.24',
+            txHash: '0xclose',
+            transactionTime: 1_800_000_100_000,
+          }],
+          next: [],
+        };
+      },
+    },
+    async fetchSettlementMetrics(params) {
+      metricCalls.push(params);
+      return {
+        returnedAmount: '4.906950176095672850',
+        realizedPnl: '-0.093049823904327150',
+      };
+    },
+  });
+
+  const [record] = await service.list(wallet);
+
+  assert.deepEqual(metricCalls, [{
+    txHash: '0xclose',
+    marketId: 'uni-market',
+    direction: 'short',
+  }]);
+  assert.equal(record.stake, null);
+  assert.equal(record.returnedAmount, '4.906950176095672850');
+  assert.equal(record.realizedPnl, '-0.093049823904327150');
 });
 
 test('history sync binds every record to the authenticated wallet', () => {
