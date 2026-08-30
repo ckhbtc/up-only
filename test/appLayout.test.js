@@ -33,6 +33,21 @@ test('completed transaction toasts are anchored bottom right', async () => {
   assert.match(loadingRule, /top:/);
 });
 
+test('a new deployment offers a user-controlled bottom-right reload toast', async () => {
+  const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const toastSource = await readFile(new URL('../src/components/AppUpdateToast.jsx', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const toastRule = css.match(/\.app-update-toast \{([^}]*)\}/)?.[1] || '';
+
+  assert.match(appSource, /startAppVersionMonitor/);
+  assert.match(appSource, /appUpdateAvailable && !tradeBusy && !txStatus/);
+  assert.match(toastSource, /Reload to keep using the app\./);
+  assert.match(toastSource, /window\.location\.reload\(\)/);
+  assert.match(toastRule, /bottom:/);
+  assert.match(toastRule, /right:/);
+  assert.match(toastRule, /position:\s*fixed/);
+});
+
 test('market-card confirmation returns the trade settlement promise', async () => {
   const source = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 

@@ -9,6 +9,7 @@ import { initAccount } from './faucet.js';
 import { createSlidingWindowLimiter, requireFaucetAppRequest } from './faucetSecurity.js';
 import { relayMint } from './relayMint.js';
 import { relayRfqBroadcast } from './rfqBroadcast.js';
+import { appVersionResponse } from './appVersion.js';
 import {
   clearHistoryCookie,
   historyCookie,
@@ -33,6 +34,8 @@ export function healthResponse() {
   };
 }
 
+export { appVersionResponse };
+
 export function initAccountFailureResponse(err) {
   const message = err?.message || '';
   const lower = message.toLowerCase();
@@ -51,6 +54,11 @@ export function initAccountFailureResponse(err) {
 
 router.get('/health', (_req, res) => {
   res.json(healthResponse());
+});
+
+router.get('/version', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(appVersionResponse());
 });
 
 router.post('/trade-history/challenge', (req, res) => {

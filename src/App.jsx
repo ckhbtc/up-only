@@ -15,6 +15,7 @@ import Confetti from './components/Confetti';
 import TransactionStatus from './components/TransactionStatus';
 import WalletSelector from './components/WalletSelector';
 import TradeHistoryModal from './components/TradeHistoryModal';
+import AppUpdateToast from './components/AppUpdateToast';
 import {
   buildRfqCloseInput,
   primeRfqAccountCache,
@@ -28,6 +29,7 @@ import { sortMarketsForUpOnly } from './services/marketSort';
 import { shouldOpenPairSearch } from './services/pairSearchShortcut';
 import { closePositionsSequentially } from './services/closeAllPositions';
 import { createTradeLock } from './services/tradeLock';
+import { startAppVersionMonitor } from './services/appVersion';
 import { getOpenTradeStatus, userFacingTradeError } from './services/tradeResult';
 import { startWalletBalanceRefresh } from './services/walletRefresh';
 import { createUpOnlyCid } from './services/tradeCid';
@@ -103,6 +105,7 @@ export default function App() {
   const [openedCards, setOpenedCards] = useState({});
   const [openingCards, setOpeningCards] = useState({});
   const [tradeBusy, setTradeBusy] = useState(false);
+  const [appUpdateAvailable, setAppUpdateAvailable] = useState(false);
   const tradeLockRef = useRef(null);
   const marketCardRefs = useRef(new Map());
   const [searchOpen, setSearchOpen] = useState(false);
@@ -116,6 +119,8 @@ export default function App() {
   if (!tradeLockRef.current) {
     tradeLockRef.current = createTradeLock();
   }
+
+  useEffect(() => startAppVersionMonitor(() => setAppUpdateAvailable(true)), []);
 
   // Sync theme to <html data-theme> + localStorage
   useEffect(() => {
@@ -785,6 +790,7 @@ export default function App() {
       {/* Transaction status toast */}
       {confetti && <Confetti />}
       <TransactionStatus status={txStatus} />
+      {appUpdateAvailable && !tradeBusy && !txStatus && <AppUpdateToast />}
 
       <div className="up-page">
         <main style={{ flex: 1, minWidth: 0 }}>
