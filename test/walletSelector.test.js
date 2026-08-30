@@ -40,6 +40,9 @@ test('wallet selector shows MetaMask, Rabby, and Keplr availability', () => {
   assert.match(markup, /Detected/);
   assert.match(markup, /href="https:\/\/www\.keplr\.app\/download"/);
   assert.match(markup, />Install</);
+  assert.doesNotMatch(markup, /EVM WALLET/i);
+  assert.doesNotMatch(markup, /Pick the extension/i);
+  assert.doesNotMatch(markup, /selected provider/i);
 });
 
 test('wallet selector renders connection errors without hiding the choices', () => {

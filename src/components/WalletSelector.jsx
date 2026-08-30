@@ -45,10 +45,7 @@ export default function WalletSelector({
         aria-labelledby="wallet-selector-title"
       >
         <div className="wallet-selector-head">
-          <div>
-            <span className="wallet-selector-kicker">EVM WALLET</span>
-            <h2 id="wallet-selector-title">Connect wallet</h2>
-          </div>
+          <h2 id="wallet-selector-title">Connect wallet</h2>
           <button
             type="button"
             className="wallet-selector-close"
@@ -59,10 +56,6 @@ export default function WalletSelector({
             ×
           </button>
         </div>
-
-        <p className="wallet-selector-copy">
-          Pick the extension that should sign every UpOnly action.
-        </p>
 
         <div className="wallet-selector-options">
           {options.map(wallet => {
@@ -107,10 +100,6 @@ export default function WalletSelector({
         </div>
 
         {error && <div className="wallet-selector-error" role="alert">{error}</div>}
-
-        <p className="wallet-selector-foot">
-          The selected provider is used for trading, AuthZ, take-profit, and bridging.
-        </p>
       </section>
     </div>
   );

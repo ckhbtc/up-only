@@ -3038,13 +3038,6 @@ input:focus-visible {
   padding: 18px 20px;
 }
 
-.wallet-selector-kicker {
-  display: block;
-  font: 700 13px/1 var(--font-mono);
-  letter-spacing: 0.18em;
-  margin-bottom: 5px;
-}
-
 .wallet-selector-head h2 {
   font: 400 clamp(32px, 7vw, 46px)/0.9 var(--font-heading);
   letter-spacing: 0.02em;
@@ -3070,20 +3063,10 @@ input:focus-visible {
   opacity: 0.5;
 }
 
-.wallet-selector-copy,
-.wallet-selector-foot {
-  color: var(--text-muted);
-  font: 700 13px/1.45 var(--font-mono);
-}
-
-.wallet-selector-copy {
-  padding: 18px 20px 12px;
-}
-
 .wallet-selector-options {
   display: grid;
   gap: 10px;
-  padding: 0 20px 18px;
+  padding: 18px 20px;
 }
 
 .wallet-selector-option {
@@ -3175,11 +3158,6 @@ input:focus-visible {
   padding: 11px 13px;
 }
 
-.wallet-selector-foot {
-  border-top: 3px solid var(--border-light);
-  padding: 13px 20px 16px;
-}
-
 @media (max-width: 560px) {
   .wallet-selector-backdrop {
     align-items: flex-start;
@@ -3190,9 +3168,7 @@ input:focus-visible {
     box-shadow: 6px 6px 0 var(--blue);
   }
 
-  .wallet-selector-head,
-  .wallet-selector-copy,
-  .wallet-selector-foot {
+  .wallet-selector-head {
     padding-left: 14px;
     padding-right: 14px;
   }
