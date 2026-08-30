@@ -87,7 +87,8 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
               <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
                 <span>Pair</span>
                 <span>Action</span>
-                <span>Amount / rPNL</span>
+                <span>Amount</span>
+                <span>rPNL</span>
                 <span>Status</span>
               </div>
               {records.map(record => {
@@ -100,7 +101,8 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
                   <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
                     <strong className="up-trade-history-pair">{symbol}</strong>
                     <span className={`up-trade-history-action ${display.actionClass}`}>{display.actionLabel}</span>
-                    <span className={`up-trade-history-value ${display.valueClass}`}>{display.value}</span>
+                    <span className={`up-trade-history-amount ${display.amountClass}`}>{display.amount}</span>
+                    <span className={`up-trade-history-pnl ${display.realizedPnlClass}`}>{display.realizedPnl}</span>
                     <div className="up-trade-history-result">
                       {record.txHash ? (
                         <a

@@ -10,12 +10,14 @@ test('open history rows show the cash amount', () => {
   }), {
     actionLabel: 'Open',
     actionClass: 'is-open',
-    value: '$5.00',
-    valueClass: 'is-positive',
+    amount: '$5.00',
+    amountClass: 'is-positive',
+    realizedPnl: '',
+    realizedPnlClass: 'is-empty',
   });
 });
 
-test('confirmed close history rows show realized pnl instead of returned margin', () => {
+test('confirmed close history rows show returned margin and realized pnl separately', () => {
   assert.deepEqual(tradeHistoryDisplay({
     action: 'close',
     status: 'confirmed',
@@ -24,12 +26,14 @@ test('confirmed close history rows show realized pnl instead of returned margin'
   }), {
     actionLabel: 'Close',
     actionClass: 'is-close',
-    value: '-$0.09',
-    valueClass: 'is-negative',
+    amount: '$4.90',
+    amountClass: 'is-positive',
+    realizedPnl: '-$0.09',
+    realizedPnlClass: 'is-negative',
   });
 });
 
-test('failed close history rows do not present attempted margin as a result', () => {
+test('failed close history rows leave unavailable settlement values blank', () => {
   assert.deepEqual(tradeHistoryDisplay({
     action: 'close',
     status: 'failed',
@@ -37,7 +41,9 @@ test('failed close history rows do not present attempted margin as a result', ()
   }), {
     actionLabel: 'Close',
     actionClass: 'is-close',
-    value: '—',
-    valueClass: 'is-empty',
+    amount: '',
+    amountClass: 'is-empty',
+    realizedPnl: '',
+    realizedPnlClass: 'is-empty',
   });
 });

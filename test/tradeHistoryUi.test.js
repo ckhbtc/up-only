@@ -47,11 +47,11 @@ test('trade history uses a compact flat activity ledger', async () => {
   assert.match(rowRule, /border-bottom:/);
 });
 
-test('trade history rows show open amount or close realized pnl with linked status', async () => {
+test('trade history rows separate amount and realized pnl with linked status', async () => {
   const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-action,\s*\.up-trade-history-value\s*\{([^}]*)\}/)?.[1] || '';
-  const resultValueRule = [...css.matchAll(/\.up-trade-history-value\s*\{([^}]*)\}/g)]
+  const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-action,\s*\.up-trade-history-amount,\s*\.up-trade-history-pnl\s*\{([^}]*)\}/)?.[1] || '';
+  const amountRule = [...css.matchAll(/\.up-trade-history-amount,\s*\.up-trade-history-pnl\s*\{([^}]*)\}/g)]
     .map(match => match[1])
     .find(rule => /font-family:/.test(rule)) || '';
   const statusRule = css.match(/\.up-trade-history-status\s*\{([^}]*)\}/)?.[1] || '';
@@ -59,13 +59,15 @@ test('trade history rows show open amount or close realized pnl with linked stat
 
   assert.match(modal, />Pair</);
   assert.match(modal, />Action</);
-  assert.match(modal, />Amount \/ rPNL</);
+  assert.match(modal, />Amount</);
+  assert.match(modal, />rPNL</);
   assert.doesNotMatch(modal, />Margin</);
   assert.match(modal, />Status</);
   assert.doesNotMatch(modal, />Transaction</);
   assert.doesNotMatch(modal, /shortTxHash/);
   assert.match(modal, /tradeHistoryDisplay\(record\)/);
-  assert.doesNotMatch(modal, /record\.returnedAmount/);
+  assert.match(modal, /display\.amount/);
+  assert.match(modal, /display\.realizedPnl/);
   assert.match(modal, /record\.txHash \? \([\s\S]*<a[\s\S]*className=\{statusClass\}/);
   assert.match(modal, /formatLocalTradeTimestamp\(record\.createdAt\)/);
   assert.match(modal, /<time[\s\S]*up-trade-history-time/);
@@ -77,10 +79,10 @@ test('trade history rows show open amount or close realized pnl with linked stat
   assert.doesNotMatch(modal, /record\.errorMessage/);
   assert.doesNotMatch(modal, /formatTimestamp/);
   assert.match(valueRule, /font-size:\s*30px/);
-  assert.match(resultValueRule, /font-family:\s*var\(--font-heading\)/);
-  assert.match(resultValueRule, /justify-self:\s*start/);
-  assert.match(resultValueRule, /text-align:\s*left/);
-  assert.match(resultValueRule, /width:\s*100%/);
+  assert.match(amountRule, /font-family:\s*var\(--font-heading\)/);
+  assert.match(amountRule, /justify-self:\s*start/);
+  assert.match(amountRule, /text-align:\s*left/);
+  assert.match(amountRule, /width:\s*100%/);
   assert.match(statusRule, /font-size:\s*13px/);
   assert.match(resultRule, /justify-items:\s*end/);
 });
