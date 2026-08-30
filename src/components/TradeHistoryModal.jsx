@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { txExplorerUrl, shortTxHash } from '../services/explorer.js';
+import { txExplorerUrl } from '../services/explorer.js';
 import {
   fetchDisplayedTradeHistory,
   listLocalTradeHistory,
@@ -92,26 +92,30 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
               <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
                 <span>Pair</span>
                 <span>Margin</span>
-                <span>Transaction</span>
                 <span>Status</span>
               </div>
               {records.map(record => {
                 const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const margin = formatValue(record.stake, ' USDC') || '—';
+                const margin = formatValue(record.stake);
+                const statusLabel = tradeStatusLabel(record.status);
+                const statusClass = `up-trade-history-status is-${record.status}`;
                 return (
                   <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
                     <strong className="up-trade-history-pair">{symbol}</strong>
-                    <span className="up-trade-history-margin">{margin}</span>
-                    <span className="up-trade-history-tx">
-                      {record.txHash ? (
-                        <a href={txExplorerUrl(record.txHash)} target="_blank" rel="noreferrer">
-                          {shortTxHash(record.txHash)}
-                        </a>
-                      ) : '—'}
-                    </span>
-                    <span className={`up-trade-history-status is-${record.status}`}>
-                      {tradeStatusLabel(record.status)}
-                    </span>
+                    <span className="up-trade-history-margin">{margin ? `$${margin}` : '—'}</span>
+                    {record.txHash ? (
+                      <a
+                        className={statusClass}
+                        href={txExplorerUrl(record.txHash)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${statusLabel} transaction`}
+                      >
+                        {statusLabel}
+                      </a>
+                    ) : (
+                      <span className={statusClass}>{statusLabel}</span>
+                    )}
                   </article>
                 );
               })}

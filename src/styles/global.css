@@ -1966,7 +1966,7 @@ input:focus-visible {
   align-items: center;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(80px, 0.75fr) minmax(180px, 1.15fr) minmax(190px, 1.3fr) auto;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(220px, 1.35fr) auto;
 }
 
 .up-trade-history-columns-head {
@@ -1976,6 +1976,10 @@ input:focus-visible {
   letter-spacing: 0.7px;
   padding: 8px 12px 7px;
   text-transform: uppercase;
+}
+
+.up-trade-history-columns-head > span:last-child {
+  text-align: right;
 }
 
 .up-trade-history-row {
@@ -1991,33 +1995,39 @@ input:focus-visible {
   border-bottom: 0;
 }
 
+.up-trade-history-pair,
+.up-trade-history-margin {
+  font-size: 30px;
+  line-height: 0.95;
+}
+
 .up-trade-history-pair {
   color: var(--text-primary);
   font-family: var(--font-heading);
-  font-size: 17px;
-  line-height: 1;
   text-transform: uppercase;
 }
 
-.up-trade-history-margin,
-.up-trade-history-tx {
+.up-trade-history-margin {
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 20px;
   font-weight: 900;
-  line-height: 1;
   min-width: 0;
 }
 
 .up-trade-history-status {
+  align-items: center;
   border: 0;
   border-radius: 4px;
+  display: inline-flex;
   flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 900;
+  justify-content: center;
+  justify-self: end;
   letter-spacing: 0.4px;
   padding: 4px 6px;
+  text-decoration: none;
   text-transform: uppercase;
 }
 
@@ -2040,14 +2050,6 @@ input:focus-visible {
 .up-trade-history-status.is-submitted {
   background: var(--orange-dim);
   color: var(--orange);
-}
-
-.up-trade-history-tx a {
-  color: var(--accent);
-}
-
-.up-trade-history-tx {
-  overflow-wrap: anywhere;
 }
 
 .up-trade-history-auth-error {
@@ -2911,11 +2913,6 @@ input:focus-visible {
   .up-trade-history-margin {
     grid-column: 1 / -1;
     grid-row: 2;
-  }
-
-  .up-trade-history-tx {
-    grid-column: 1 / -1;
-    grid-row: 3;
   }
 
   .up-trade-history-status {

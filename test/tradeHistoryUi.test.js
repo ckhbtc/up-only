@@ -47,15 +47,18 @@ test('trade history uses a compact flat activity ledger', async () => {
   assert.match(rowRule, /border-bottom:/);
 });
 
-test('trade history rows only show pair, margin, transaction, and status', async () => {
+test('trade history rows only show pair, dollar margin, and linked status', async () => {
   const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  const valueRule = css.match(/\.up-trade-history-margin,\s*\.up-trade-history-tx\s*\{([^}]*)\}/)?.[1] || '';
+  const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-margin\s*\{([^}]*)\}/)?.[1] || '';
 
   assert.match(modal, />Pair</);
   assert.match(modal, />Margin</);
-  assert.match(modal, />Transaction</);
   assert.match(modal, />Status</);
+  assert.doesNotMatch(modal, />Transaction</);
+  assert.doesNotMatch(modal, /shortTxHash/);
+  assert.match(modal, /\$\{margin\}/);
+  assert.match(modal, /record\.txHash \? \([\s\S]*<a[\s\S]*className=\{statusClass\}/);
   assert.doesNotMatch(modal, /record\.rfqId/);
   assert.doesNotMatch(modal, /record\.leverage/);
   assert.doesNotMatch(modal, /record\.quantity/);
@@ -63,5 +66,5 @@ test('trade history rows only show pair, margin, transaction, and status', async
   assert.doesNotMatch(modal, /record\.worstPrice/);
   assert.doesNotMatch(modal, /record\.errorMessage/);
   assert.doesNotMatch(modal, /formatTimestamp/);
-  assert.match(valueRule, /font-size:\s*20px/);
+  assert.match(valueRule, /font-size:\s*30px/);
 });
