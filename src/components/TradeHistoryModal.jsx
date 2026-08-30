@@ -23,12 +23,6 @@ function formatValue(value, suffix = '') {
   return `${number.toLocaleString(undefined, { maximumFractionDigits: 8 })}${suffix}`;
 }
 
-function formatTimestamp(value) {
-  const timestamp = Number(value || 0);
-  if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
-  return new Date(timestamp).toLocaleString();
-}
-
 export default function TradeHistoryModal({ ethAddress, injAddress, markets = [], onClose }) {
   const [records, setRecords] = useState(() => listLocalTradeHistory(injAddress));
   const [loading, setLoading] = useState(true);
@@ -95,46 +89,29 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
 
           {!loading && records.length > 0 && (
             <div className="up-trade-history-list">
+              <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
+                <span>Pair</span>
+                <span>Margin</span>
+                <span>Transaction</span>
+                <span>Status</span>
+              </div>
               {records.map(record => {
                 const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const cash = formatValue(record.stake, ' USDC');
-                const leverage = formatValue(record.leverage, 'x');
-                const quantity = formatValue(record.quantity);
-                const price = formatValue(record.quotePrice || record.worstPrice);
+                const margin = formatValue(record.stake, ' USDC') || '—';
                 return (
-                  <article key={record.cid} className="up-trade-history-row">
-                    <div className="up-trade-history-main">
-                      <div>
-                        <strong>{symbol}</strong>
-                        <span>{record.action === 'close' ? 'Cash out' : 'Open long'}</span>
-                      </div>
-                      <span className={`up-trade-history-status is-${record.status}`}>
-                        {tradeStatusLabel(record.status)}
-                      </span>
-                    </div>
-
-                    <div className="up-trade-history-values">
-                      {cash && <span><small>Cash</small>{cash}</span>}
-                      {leverage && <span><small>Leverage</small>{leverage}</span>}
-                      {quantity && <span><small>Quantity</small>{quantity}</span>}
-                      {price && <span><small>{record.quotePrice ? 'Quote' : 'Limit'}</small>{price}</span>}
-                    </div>
-
-                    <div className="up-trade-history-meta">
-                      <span>{formatTimestamp(record.createdAt)}</span>
-                      <span>
-                        {record.txHash && (
-                          <a href={txExplorerUrl(record.txHash)} target="_blank" rel="noreferrer">
-                            Tx {shortTxHash(record.txHash)}
-                          </a>
-                        )}
-                        {record.rfqId && <span>RFQ {record.rfqId}</span>}
-                      </span>
-                    </div>
-
-                    {record.errorMessage && (
-                      <div className="up-trade-history-error">{record.errorMessage}</div>
-                    )}
+                  <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
+                    <strong className="up-trade-history-pair">{symbol}</strong>
+                    <span className="up-trade-history-margin">{margin}</span>
+                    <span className="up-trade-history-tx">
+                      {record.txHash ? (
+                        <a href={txExplorerUrl(record.txHash)} target="_blank" rel="noreferrer">
+                          {shortTxHash(record.txHash)}
+                        </a>
+                      ) : '—'}
+                    </span>
+                    <span className={`up-trade-history-status is-${record.status}`}>
+                      {tradeStatusLabel(record.status)}
+                    </span>
                   </article>
                 );
               })}
