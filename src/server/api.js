@@ -6,14 +6,25 @@
 
 import express from 'express';
 import { initAccount } from './faucet.js';
-import { requireFaucetAppRequest } from './faucetSecurity.js';
+import { createSlidingWindowLimiter, requireFaucetAppRequest } from './faucetSecurity.js';
 import { relayMint } from './relayMint.js';
 import { relayRfqBroadcast } from './rfqBroadcast.js';
+import {
+  clearHistoryCookie,
+  historyCookie,
+  requireHistorySession,
+  tradeHistoryAuth,
+  tradeHistoryService,
+} from './tradeHistoryRuntime.js';
 
 const router = express.Router();
 router.use(express.json({ limit: '64kb' }));
 
 const INIT_ACCOUNT_UNAVAILABLE = 'New wallet setup is temporarily unavailable. Please try again.';
+const historyChallengeLimiter = createSlidingWindowLimiter({
+  limit: 30,
+  windowMs: 15 * 60 * 1000,
+});
 
 export function healthResponse() {
   return {
@@ -40,6 +51,57 @@ export function initAccountFailureResponse(err) {
 
 router.get('/health', (_req, res) => {
   res.json(healthResponse());
+});
+
+router.post('/trade-history/challenge', (req, res) => {
+  if (!historyChallengeLimiter.allow(req.ip || 'unknown')) {
+    res.setHeader('Retry-After', '900');
+    return res.status(429).json({ error: 'Too many history sign-in attempts.' });
+  }
+  try {
+    const challenge = tradeHistoryAuth.createChallenge(req.body || {});
+    res.json({ ok: true, ...challenge });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/trade-history/verify', (req, res) => {
+  try {
+    const session = tradeHistoryAuth.verifyChallenge(req.body || {});
+    res.setHeader('Set-Cookie', historyCookie(session.token, req));
+    res.json({
+      ok: true,
+      wallet: session.injAddress,
+      expiresAt: session.expiresAt,
+    });
+  } catch (err) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+router.post('/trade-history/logout', (req, res) => {
+  res.setHeader('Set-Cookie', clearHistoryCookie(req));
+  res.json({ ok: true });
+});
+
+router.post('/trade-history/sync', requireHistorySession, (req, res) => {
+  try {
+    const records = tradeHistoryService.sync(req.historySession.injAddress, req.body?.events);
+    res.json({ ok: true, synced: records.length });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.get('/trade-history', requireHistorySession, async (req, res) => {
+  try {
+    const records = await tradeHistoryService.list(req.historySession.injAddress);
+    res.json({ ok: true, wallet: req.historySession.injAddress, records });
+  } catch (err) {
+    console.error('trade-history reconciliation failed:', err);
+    res.status(502).json({ error: 'Trade history is temporarily unavailable.' });
+  }
 });
 
 router.post('/init-account', requireFaucetAppRequest, async (req, res) => {
