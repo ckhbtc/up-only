@@ -170,7 +170,8 @@ export function createTradeHistoryStore({ database, path } = {}) {
     const existing = rowToRecord(getStatement.get(incoming.cid));
     if (existing && existing.wallet !== incoming.wallet) throw new Error('Trade CID belongs to another wallet');
 
-    const stale = existing && incoming.updatedAt < existing.updatedAt;
+    const authoritativeConfirmation = incoming.status === 'confirmed' && incoming.source === 'indexer';
+    const stale = existing && incoming.updatedAt < existing.updatedAt && !authoritativeConfirmation;
     const preserveTerminal = existing && (
       existing.status === 'confirmed'
       || (existing.status === 'failed' && incoming.status !== 'confirmed')

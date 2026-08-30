@@ -90,3 +90,35 @@ test('settlement conversion accepts only UpOnly CIDs and derives open or close',
   assert.equal(opened.status, 'confirmed');
   assert.equal(opened.rfqId, '12');
 });
+
+test('authoritative indexer confirmation overrides a newer client broadcasting timestamp', () => {
+  const store = createTradeHistoryStore({ database: new DatabaseSync(':memory:') });
+  store.upsert({
+    cid: 'up-only-indexer-confirmed-late',
+    wallet: walletA,
+    marketId: 'uni-market',
+    symbol: 'UNI',
+    action: 'open',
+    status: 'broadcasting',
+    txHash: 'CONFIRMED-HASH',
+    createdAt: 1_800_000_000_100,
+    updatedAt: 1_800_000_000_400,
+    source: 'client',
+  });
+  store.upsert({
+    cid: 'up-only-indexer-confirmed-late',
+    wallet: walletA,
+    marketId: 'uni-market',
+    status: 'confirmed',
+    txHash: '0xconfirmed-hash',
+    createdAt: 1_800_000_000_100,
+    updatedAt: 1_800_000_000_300,
+    confirmedAt: 1_800_000_000_300,
+    source: 'indexer',
+  });
+
+  const [record] = store.list(walletA);
+  assert.equal(record.status, 'confirmed');
+  assert.equal(record.source, 'indexer');
+  assert.equal(record.confirmedAt, 1_800_000_000_300);
+});
