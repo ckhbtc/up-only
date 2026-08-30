@@ -962,7 +962,7 @@ input:focus-visible {
   padding: 10px 12px;
   pointer-events: none;
   position: absolute;
-  left: -4px;
+  right: -4px;
   text-align: left;
   text-transform: none;
   top: calc(100% + 9px);

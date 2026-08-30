@@ -1,5 +1,6 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import react from '@vitejs/plugin-react';
@@ -67,4 +68,12 @@ test('closed oracle badge exposes the warning as an accessible tooltip', () => {
     markup,
     /The oracle for this market is currently closed\. You may have issues getting filled, but feel free to YOLO it anyway\./,
   );
+});
+
+test('closed oracle tooltip opens inward so the card does not clip it', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const tooltipRule = css.match(/\.up-oracle-stale-tooltip\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(tooltipRule, /right:\s*-4px/);
+  assert.doesNotMatch(tooltipRule, /left:\s*-4px/);
 });
