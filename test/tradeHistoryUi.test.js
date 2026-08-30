@@ -73,5 +73,8 @@ test('trade history rows only show pair, dollar amount, and linked status', asyn
   assert.match(valueRule, /font-size:\s*30px/);
   assert.match(amountRule, /color:\s*var\(--green\)/);
   assert.match(amountRule, /font-family:\s*var\(--font-heading\)/);
+  assert.match(amountRule, /justify-self:\s*start/);
+  assert.match(amountRule, /text-align:\s*left/);
+  assert.match(amountRule, /width:\s*100%/);
   assert.match(statusRule, /font-size:\s*13px/);
 });

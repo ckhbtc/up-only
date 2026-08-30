@@ -2011,7 +2011,10 @@ input:focus-visible {
   color: var(--green);
   font-family: var(--font-heading);
   font-weight: 900;
+  justify-self: start;
   min-width: 0;
+  text-align: left;
+  width: 100%;
 }
 
 .up-trade-history-status {
