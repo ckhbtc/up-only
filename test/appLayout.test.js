@@ -41,7 +41,7 @@ test('a new deployment offers a user-controlled bottom-right reload toast', asyn
 
   assert.match(appSource, /startAppVersionMonitor/);
   assert.match(appSource, /appUpdateAvailable && !tradeBusy && !txStatus/);
-  assert.match(toastSource, /Reload to keep using the app\./);
+  assert.match(toastSource, /A new version of UpOnly is available\. Please reload to keep using the app\./);
   assert.match(toastSource, /window\.location\.reload\(\)/);
   assert.match(toastRule, /bottom:/);
   assert.match(toastRule, /right:/);
