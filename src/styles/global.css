@@ -1915,29 +1915,66 @@ input:focus-visible {
 }
 
 .up-trade-history-dialog {
-  max-width: 760px;
+  border-radius: 8px;
+  border-width: 3px;
+  box-shadow: 5px 5px 0 var(--blue);
+  max-width: 680px;
+  overflow: hidden;
+}
+
+.up-trade-history-dialog .up-bridge-header {
+  align-items: center;
+  border-bottom-width: 3px;
+  border-radius: 4px 4px 0 0;
+  padding: 9px 12px;
+}
+
+.up-trade-history-dialog .up-bridge-header h2 {
+  font-size: 25px;
+}
+
+.up-trade-history-dialog .up-bridge-close {
+  border-width: 2px;
+  box-shadow: none;
+  height: 28px;
+  width: 28px;
 }
 
 .up-trade-history-body {
-  min-height: 220px;
+  min-height: 160px;
+  padding: 12px;
+}
+
+.up-trade-history-body > .up-bridge-history-empty {
+  background: transparent;
+  border: 0;
+  padding: 30px 12px;
 }
 
 .up-trade-history-list {
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 6px;
   display: grid;
-  gap: 10px;
+  gap: 0;
   max-height: min(620px, calc(100vh - 170px));
   overflow-y: auto;
-  padding: 0 6px 7px 0;
+  padding: 0;
 }
 
 .up-trade-history-row {
   background: var(--paper);
-  border: 3px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 4px 4px 0 var(--border);
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
+  border-radius: 0;
+  box-shadow: none;
   display: grid;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 11px 12px;
+}
+
+.up-trade-history-row:last-child {
+  border-bottom: 0;
 }
 
 .up-trade-history-main,
@@ -1956,7 +1993,7 @@ input:focus-visible {
 .up-trade-history-main strong {
   color: var(--text-primary);
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -1965,41 +2002,46 @@ input:focus-visible {
 .up-trade-history-meta {
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 }
 
 .up-trade-history-status {
-  border: 2px solid currentColor;
+  border: 0;
   border-radius: 4px;
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
-  padding: 4px 7px;
+  letter-spacing: 0.4px;
+  padding: 4px 6px;
   text-transform: uppercase;
 }
 
 .up-trade-history-status.is-confirmed {
+  background: var(--green-dim);
   color: var(--green);
 }
 
 .up-trade-history-status.is-failed {
+  background: var(--red-dim);
   color: var(--red);
 }
 
 .up-trade-history-status.is-quoted,
 .up-trade-history-status.is-broadcasting {
+  background: color-mix(in srgb, var(--blue) 12%, var(--paper));
   color: var(--blue);
 }
 
 .up-trade-history-status.is-submitted {
+  background: var(--orange-dim);
   color: var(--orange);
 }
 
 .up-trade-history-values {
   display: grid;
-  gap: 8px;
+  gap: 18px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -2007,18 +2049,23 @@ input:focus-visible {
   color: var(--text-primary);
   display: grid;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .up-trade-history-values small {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.7px;
   text-transform: uppercase;
+}
+
+.up-trade-history-meta {
+  border-top: 1px solid color-mix(in srgb, var(--border) 12%, transparent);
+  padding-top: 7px;
 }
 
 .up-trade-history-meta > span:last-child {
@@ -2033,20 +2080,20 @@ input:focus-visible {
 }
 
 .up-trade-history-error {
-  background: color-mix(in srgb, var(--red) 12%, transparent);
-  border-left: 3px solid var(--red);
+  background: var(--red-dim);
+  border-radius: 3px;
   color: var(--red);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  padding: 7px 9px;
+  padding: 6px 8px;
 }
 
 .up-trade-history-auth-error {
   align-items: center;
   background: color-mix(in srgb, var(--red) 10%, var(--paper));
-  border: 3px solid var(--red);
-  border-radius: 8px;
+  border: 2px solid var(--red);
+  border-radius: 5px;
   color: var(--red);
   display: flex;
   font-family: var(--font-mono);
@@ -2891,6 +2938,11 @@ input:focus-visible {
   .up-trade-history-auth-error {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .up-trade-history-main {
+    align-items: center;
+    flex-direction: row;
   }
 
   .up-trade-history-values {

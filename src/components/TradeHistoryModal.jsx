@@ -73,10 +73,7 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
     }}>
       <section className="up-bridge-dialog up-trade-history-dialog" role="dialog" aria-modal="true" aria-labelledby="trade-history-title">
         <header className="up-bridge-header">
-          <div>
-            <div className="up-bridge-kicker">Wallet activity · UpOnly RFQ</div>
-            <h2 id="trade-history-title">Trade History</h2>
-          </div>
+          <h2 id="trade-history-title">Trade History</h2>
           <button type="button" className="up-bridge-close" onClick={onClose} aria-label="Close trade history">×</button>
         </header>
 

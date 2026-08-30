@@ -32,3 +32,17 @@ test('open trade history refreshes indexer-backed statuses periodically', async 
   assert.match(modal, /fetchDisplayedTradeHistory\(injAddress\)/);
   assert.match(modal, /clearInterval\(interval\)/);
 });
+
+test('trade history uses a compact flat activity ledger', async () => {
+  const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const listRule = css.match(/\.up-trade-history-list\s*\{([^}]*)\}/)?.[1] || '';
+  const rowRule = css.match(/\.up-trade-history-row\s*\{([^}]*)\}/)?.[1] || '';
+  const dialogRule = css.match(/\.up-trade-history-dialog\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.doesNotMatch(modal, /Wallet activity/);
+  assert.match(dialogRule, /max-width:\s*680px/);
+  assert.match(listRule, /gap:\s*0/);
+  assert.match(rowRule, /box-shadow:\s*none/);
+  assert.match(rowRule, /border-bottom:/);
+});
