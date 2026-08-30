@@ -2003,7 +2003,7 @@ input:focus-visible {
 .up-trade-history-tx {
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   min-width: 0;
 }
