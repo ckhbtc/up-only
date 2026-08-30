@@ -70,10 +70,15 @@ test('closed oracle badge exposes the warning as an accessible tooltip', () => {
   );
 });
 
-test('closed oracle tooltip opens inward so the card does not clip it', async () => {
+test('closed oracle tooltip stays centered in the card regardless of badge position', async () => {
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const cardTopRule = css.match(/\.up-card-top\s*\{([^}]*)\}/)?.[1] || '';
+  const badgeRule = css.match(/\.up-market-badge-oracle-stale\s*\{([^}]*)\}/)?.[1] || '';
   const tooltipRule = css.match(/\.up-oracle-stale-tooltip\s*\{([^}]*)\}/)?.[1] || '';
 
-  assert.match(tooltipRule, /right:\s*-4px/);
-  assert.doesNotMatch(tooltipRule, /left:\s*-4px/);
+  assert.match(cardTopRule, /position:\s*relative/);
+  assert.match(badgeRule, /position:\s*static/);
+  assert.match(tooltipRule, /left:\s*50%/);
+  assert.match(tooltipRule, /transform:\s*translate\(-50%,\s*-3px\)/);
+  assert.doesNotMatch(tooltipRule, /right:/);
 });
