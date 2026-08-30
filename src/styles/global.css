@@ -2001,7 +2001,7 @@ input:focus-visible {
   align-items: center;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(85px, 0.7fr) minmax(75px, 0.55fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) auto;
+  grid-template-columns: minmax(85px, 0.7fr) minmax(75px, 0.55fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(145px, 1fr);
 }
 
 .up-trade-history-columns-head {

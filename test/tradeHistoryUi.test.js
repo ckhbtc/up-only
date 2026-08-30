@@ -54,6 +54,7 @@ test('trade history rows separate amount and realized pnl with linked status', a
   const amountRule = [...css.matchAll(/\.up-trade-history-amount,\s*\.up-trade-history-pnl\s*\{([^}]*)\}/g)]
     .map(match => match[1])
     .find(rule => /font-family:/.test(rule)) || '';
+  const columnsRule = css.match(/\.up-trade-history-columns\s*\{([^}]*)\}/)?.[1] || '';
   const statusRule = css.match(/\.up-trade-history-status\s*\{([^}]*)\}/)?.[1] || '';
   const resultRule = css.match(/\.up-trade-history-result\s*\{([^}]*)\}/)?.[1] || '';
 
@@ -83,6 +84,8 @@ test('trade history rows separate amount and realized pnl with linked status', a
   assert.match(amountRule, /justify-self:\s*start/);
   assert.match(amountRule, /text-align:\s*left/);
   assert.match(amountRule, /width:\s*100%/);
+  assert.match(columnsRule, /minmax\(145px,\s*1fr\)/);
+  assert.doesNotMatch(columnsRule, /\sauto\s*;/);
   assert.match(statusRule, /font-size:\s*13px/);
   assert.match(resultRule, /justify-items:\s*end/);
 });
