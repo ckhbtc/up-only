@@ -53,6 +53,7 @@ test('trade history rows only show pair, dollar amount, and linked status', asyn
   const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-margin\s*\{([^}]*)\}/)?.[1] || '';
   const amountRule = css.match(/\n\.up-trade-history-margin\s*\{\s*color:([^}]*)\}/)?.[0] || '';
   const statusRule = css.match(/\.up-trade-history-status\s*\{([^}]*)\}/)?.[1] || '';
+  const resultRule = css.match(/\.up-trade-history-result\s*\{([^}]*)\}/)?.[1] || '';
 
   assert.match(modal, />Pair</);
   assert.match(modal, />Amount</);
@@ -63,6 +64,8 @@ test('trade history rows only show pair, dollar amount, and linked status', asyn
   assert.match(modal, /formatUsdcBalance\(record\.stake\)/);
   assert.match(modal, /\$\{margin\}/);
   assert.match(modal, /record\.txHash \? \([\s\S]*<a[\s\S]*className=\{statusClass\}/);
+  assert.match(modal, /formatLocalTradeTimestamp\(record\.createdAt\)/);
+  assert.match(modal, /<time[\s\S]*up-trade-history-time/);
   assert.doesNotMatch(modal, /record\.rfqId/);
   assert.doesNotMatch(modal, /record\.leverage/);
   assert.doesNotMatch(modal, /record\.quantity/);
@@ -77,4 +80,5 @@ test('trade history rows only show pair, dollar amount, and linked status', asyn
   assert.match(amountRule, /text-align:\s*left/);
   assert.match(amountRule, /width:\s*100%/);
   assert.match(statusRule, /font-size:\s*13px/);
+  assert.match(resultRule, /justify-items:\s*end/);
 });

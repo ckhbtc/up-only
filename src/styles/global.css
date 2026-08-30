@@ -2017,6 +2017,12 @@ input:focus-visible {
   width: 100%;
 }
 
+.up-trade-history-result {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
 .up-trade-history-status {
   align-items: center;
   border: 0;
@@ -2053,6 +2059,16 @@ input:focus-visible {
 .up-trade-history-status.is-submitted {
   background: var(--orange-dim);
   color: var(--orange);
+}
+
+.up-trade-history-time {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .up-trade-history-auth-error {
@@ -2918,7 +2934,7 @@ input:focus-visible {
     grid-row: 2;
   }
 
-  .up-trade-history-status {
+  .up-trade-history-result {
     grid-column: 2;
     grid-row: 1;
   }

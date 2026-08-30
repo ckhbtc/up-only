@@ -6,6 +6,7 @@ import {
   listLocalTradeHistory,
   unlockAndFetchTradeHistory,
 } from '../services/tradeHistory.js';
+import { formatLocalTradeTimestamp } from '../services/tradeHistoryTime.js';
 
 const HISTORY_REFRESH_MS = 5_000;
 
@@ -95,23 +96,34 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
                   : formatUsdcBalance(record.stake);
                 const statusLabel = tradeStatusLabel(record.status);
                 const statusClass = `up-trade-history-status is-${record.status}`;
+                const localTime = formatLocalTradeTimestamp(record.createdAt);
                 return (
                   <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
                     <strong className="up-trade-history-pair">{symbol}</strong>
                     <span className="up-trade-history-margin">{margin ? `$${margin}` : '—'}</span>
-                    {record.txHash ? (
-                      <a
-                        className={statusClass}
-                        href={txExplorerUrl(record.txHash)}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`${statusLabel} transaction`}
-                      >
-                        {statusLabel}
-                      </a>
-                    ) : (
-                      <span className={statusClass}>{statusLabel}</span>
-                    )}
+                    <div className="up-trade-history-result">
+                      {record.txHash ? (
+                        <a
+                          className={statusClass}
+                          href={txExplorerUrl(record.txHash)}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`${statusLabel} transaction`}
+                        >
+                          {statusLabel}
+                        </a>
+                      ) : (
+                        <span className={statusClass}>{statusLabel}</span>
+                      )}
+                      {localTime && (
+                        <time
+                          className="up-trade-history-time"
+                          dateTime={new Date(Number(record.createdAt)).toISOString()}
+                        >
+                          {localTime}
+                        </time>
+                      )}
+                    </div>
                   </article>
                 );
               })}
