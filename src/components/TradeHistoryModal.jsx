@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { txExplorerUrl, shortTxHash } from '../services/explorer.js';
 import {
+  fetchDisplayedTradeHistory,
   listLocalTradeHistory,
   unlockAndFetchTradeHistory,
 } from '../services/tradeHistory.js';
+
+const HISTORY_REFRESH_MS = 5_000;
 
 function tradeStatusLabel(status) {
   if (status === 'confirmed') return 'Confirmed';
@@ -54,6 +57,15 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
   useEffect(() => {
     void load();
   }, [ethAddress, injAddress]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDisplayedTradeHistory(injAddress)
+        .then(response => setRecords(response.records || []))
+        .catch(() => {});
+    }, HISTORY_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [injAddress]);
 
   return (
     <div className="up-bridge-backdrop" role="presentation" onMouseDown={event => {

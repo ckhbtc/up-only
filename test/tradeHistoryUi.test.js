@@ -23,3 +23,12 @@ test('open, close, and bulk close share their CID with history and RFQ', async (
   assert.match(rfq, /tradeOpenRfq\(\{[\s\S]*cid = createUpOnlyCid\(\)/);
   assert.match(rfq, /tradeCloseRfq\(\{[\s\S]*cid = createUpOnlyCid\(\)/);
 });
+
+test('open trade history refreshes indexer-backed statuses periodically', async () => {
+  const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
+
+  assert.match(modal, /HISTORY_REFRESH_MS\s*=\s*5_000/);
+  assert.match(modal, /setInterval\(\(\) => \{/);
+  assert.match(modal, /fetchDisplayedTradeHistory\(injAddress\)/);
+  assert.match(modal, /clearInterval\(interval\)/);
+});

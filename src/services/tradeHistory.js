@@ -61,6 +61,34 @@ export function listLocalTradeHistory(wallet, storage = localStorage) {
     .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 }
 
+function comparableTxHash(value) {
+  return String(value || '').replace(/^0x/i, '').toLowerCase();
+}
+
+export function mergeDisplayedTradeHistory(serverRecords = [], localRecords = []) {
+  const merged = new Map(serverRecords.map(record => [record.cid, record]));
+  for (const local of localRecords) {
+    const server = merged.get(local.cid);
+    if (!server) {
+      merged.set(local.cid, local);
+      continue;
+    }
+
+    const matchingConfirmedTx = local.status === 'confirmed'
+      && comparableTxHash(local.txHash)
+      && comparableTxHash(local.txHash) === comparableTxHash(server.txHash);
+    if (server.status !== 'confirmed' && matchingConfirmedTx) {
+      merged.set(local.cid, {
+        ...server,
+        status: 'confirmed',
+        confirmedAt: local.confirmedAt || local.updatedAt,
+        updatedAt: Math.max(Number(server.updatedAt || 0), Number(local.updatedAt || 0)),
+      });
+    }
+  }
+  return [...merged.values()].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+}
+
 export function classifyTradeFailure(message) {
   const text = String(message || '');
   if (/no quotes received|no executable rfq quote|selected 0 quote/i.test(text)) {
@@ -123,6 +151,17 @@ export async function fetchTradeHistory() {
   return historyCall('');
 }
 
+export async function fetchDisplayedTradeHistory(wallet, storage = localStorage) {
+  const response = await fetchTradeHistory();
+  return {
+    ...response,
+    records: mergeDisplayedTradeHistory(
+      response.records || [],
+      listLocalTradeHistory(wallet, storage),
+    ),
+  };
+}
+
 export async function unlockAndFetchTradeHistory({ ethAddress, injAddress }, storage = localStorage) {
   try {
     const current = await fetchTradeHistory();
@@ -132,7 +171,7 @@ export async function unlockAndFetchTradeHistory({ ethAddress, injAddress }, sto
     await authenticateTradeHistory({ ethAddress, injAddress });
   }
   await syncLocalTradeHistory(injAddress, storage);
-  return fetchTradeHistory();
+  return fetchDisplayedTradeHistory(injAddress, storage);
 }
 
 export function recordTradeHistoryEvent(record, storage = localStorage) {

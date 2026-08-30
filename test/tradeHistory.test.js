@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   classifyTradeFailure,
   listLocalTradeHistory,
+  mergeDisplayedTradeHistory,
   saveLocalTradeEvent,
 } from '../src/services/tradeHistory.js';
 
@@ -60,4 +61,29 @@ test('failure classifier stores safe actionable categories', () => {
   assert.equal(classifyTradeFailure('the order has insufficient margin').errorCode, 'insufficient_margin');
   assert.equal(classifyTradeFailure('account sequence mismatch expected 2').errorCode, 'sequence_mismatch');
   assert.equal(classifyTradeFailure('some private upstream detail').errorMessage, 'Trade failed before confirmation.');
+});
+
+test('display history preserves a matching local chain confirmation over broadcasting server state', () => {
+  const cid = 'up-only-confirmed-before-indexer';
+  const txHash = '5077161550AF7DFEE561DD9F27C10BEBC9AE9C286CB42B7D9FBCDF64B98FDDEC';
+  const rows = mergeDisplayedTradeHistory([{
+    cid,
+    wallet: walletA,
+    marketId: 'uni-market',
+    status: 'broadcasting',
+    txHash,
+    updatedAt: 200,
+  }], [{
+    cid,
+    wallet: walletA,
+    marketId: 'uni-market',
+    status: 'confirmed',
+    txHash: txHash.toLowerCase(),
+    confirmedAt: 150,
+    updatedAt: 150,
+  }]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].status, 'confirmed');
+  assert.equal(rows[0].confirmedAt, 150);
 });
