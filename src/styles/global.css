@@ -1159,6 +1159,93 @@ input:focus-visible {
   white-space: nowrap;
 }
 
+.up-authz-backdrop {
+  animation: modal-fade-in 0.18s ease;
+  background: var(--overlay);
+  display: grid;
+  inset: 0;
+  padding: 20px;
+  place-items: center;
+  position: fixed;
+  z-index: 250;
+}
+
+.up-authz-dialog {
+  animation: modal-pop-in 0.2s ease;
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  border-radius: 0;
+  box-shadow: 10px 10px 0 var(--border);
+  max-width: 420px;
+  padding: 26px 30px 30px;
+  position: relative;
+  width: 100%;
+}
+
+.up-authz-close {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 30px;
+  line-height: 1;
+  position: absolute;
+  right: 16px;
+  top: 14px;
+}
+
+.up-authz-title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+  margin-bottom: 10px;
+  padding-right: 28px;
+}
+
+.up-authz-copy {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.35;
+  margin-bottom: 22px;
+}
+
+.up-authz-action {
+  align-items: center;
+  background: var(--accent-grad);
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  color: var(--on-accent);
+  display: flex;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  padding: 14px 0;
+  width: 100%;
+}
+
+.up-authz-action:disabled:not(.is-loading) {
+  background: var(--bg-primary);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: wait;
+}
+
+.up-authz-action.is-loading {
+  cursor: wait;
+}
+
+.up-authz-action.is-loading .tx-loading-dot {
+  background: var(--paper);
+}
+
+.tx-authz-status {
+  z-index: 320;
+}
+
 .tx-status-toast {
   animation: slide-up 0.3s ease;
   bottom: 24px;

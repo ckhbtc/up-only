@@ -38,6 +38,28 @@ function StatusTxLink({ txHash }) {
   );
 }
 
+function RevokeAutosignStatus({ status }) {
+  return (
+    <div
+      className="up-authz-backdrop tx-authz-status"
+      role="status"
+      aria-live="polite"
+      aria-label={status.message}
+    >
+      <div className="up-authz-dialog">
+        <div className="up-authz-title">Revoke Autosign</div>
+        <div className="up-authz-copy">
+          Confirm the wallet request to remove UpOnly&apos;s trading authorization.
+        </div>
+        <div className="up-authz-action is-loading">
+          <span className="tx-loading-dot" />
+          <span>{status.message}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LoadingStatus({ status }) {
   const text = bannerText(status.message);
   const phases = phaseLabels(status.message);
@@ -97,6 +119,10 @@ function ToastStatus({ status }) {
 
 export default function TransactionStatus({ status }) {
   if (!status) return null;
-  if (status.type === 'loading') return <LoadingStatus status={status} />;
+  if (status.type === 'loading') {
+    const lower = String(status.message || '').toLowerCase();
+    if (lower.includes('revoking autosign')) return <RevokeAutosignStatus status={status} />;
+    return <LoadingStatus status={status} />;
+  }
   return <ToastStatus status={status} />;
 }
