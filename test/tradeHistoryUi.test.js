@@ -41,7 +41,7 @@ test('trade history uses a compact flat activity ledger', async () => {
   const dialogRule = css.match(/\.up-trade-history-dialog\s*\{([^}]*)\}/)?.[1] || '';
 
   assert.doesNotMatch(modal, /Wallet activity/);
-  assert.match(dialogRule, /max-width:\s*600px/);
+  assert.match(dialogRule, /max-width:\s*720px/);
   assert.match(listRule, /gap:\s*0/);
   assert.match(rowRule, /box-shadow:\s*none/);
   assert.match(rowRule, /border-bottom:/);
@@ -63,5 +63,5 @@ test('trade history rows only show pair, margin, transaction, and status', async
   assert.doesNotMatch(modal, /record\.worstPrice/);
   assert.doesNotMatch(modal, /record\.errorMessage/);
   assert.doesNotMatch(modal, /formatTimestamp/);
-  assert.match(valueRule, /font-size:\s*12px/);
+  assert.match(valueRule, /font-size:\s*20px/);
 });

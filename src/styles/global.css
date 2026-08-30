@@ -1918,7 +1918,7 @@ input:focus-visible {
   border-radius: 8px;
   border-width: 3px;
   box-shadow: 5px 5px 0 var(--blue);
-  max-width: 600px;
+  max-width: 720px;
   overflow: hidden;
 }
 
@@ -1966,7 +1966,7 @@ input:focus-visible {
   align-items: center;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(80px, 1fr) minmax(100px, 1fr) minmax(130px, 1.25fr) auto;
+  grid-template-columns: minmax(80px, 0.75fr) minmax(180px, 1.15fr) minmax(190px, 1.3fr) auto;
 }
 
 .up-trade-history-columns-head {
@@ -1984,7 +1984,7 @@ input:focus-visible {
   border-bottom: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
   border-radius: 0;
   box-shadow: none;
-  padding: 10px 12px;
+  padding: 14px 12px;
 }
 
 .up-trade-history-row:last-child {
@@ -2003,8 +2003,9 @@ input:focus-visible {
 .up-trade-history-tx {
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
   min-width: 0;
 }
 
@@ -2043,6 +2044,10 @@ input:focus-visible {
 
 .up-trade-history-tx a {
   color: var(--accent);
+}
+
+.up-trade-history-tx {
+  overflow-wrap: anywhere;
 }
 
 .up-trade-history-auth-error {
@@ -2904,13 +2909,13 @@ input:focus-visible {
   }
 
   .up-trade-history-margin {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
 
   .up-trade-history-tx {
-    grid-column: 2;
-    grid-row: 2;
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   .up-trade-history-status {
