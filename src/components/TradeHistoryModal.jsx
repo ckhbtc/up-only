@@ -18,6 +18,14 @@ function tradeStatusLabel(status) {
   return 'Submitted';
 }
 
+function formatSignedUsd(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  const sign = number > 0 ? '+' : number < 0 ? '-' : '';
+  return `${sign}$${formatUsdcBalance(Math.abs(number))}`;
+}
+
 export default function TradeHistoryModal({ ethAddress, injAddress, markets = [], onClose }) {
   const [records, setRecords] = useState(() => listLocalTradeHistory(injAddress));
   const [loading, setLoading] = useState(true);
@@ -87,13 +95,24 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
               <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
                 <span>Pair</span>
                 <span>Amount</span>
+                <span>rPNL</span>
                 <span>Status</span>
               </div>
               {records.map(record => {
                 const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const margin = record.stake === null || record.stake === undefined || record.stake === ''
+                const amount = record.action === 'close' && record.status === 'confirmed'
+                  ? record.returnedAmount
+                  : record.stake;
+                const margin = amount === null || amount === undefined || amount === ''
                   ? null
-                  : formatUsdcBalance(record.stake);
+                  : formatUsdcBalance(amount);
+                const realizedPnl = record.action === 'close'
+                  ? formatSignedUsd(record.realizedPnl)
+                  : '—';
+                const realizedPnlValue = Number(record.realizedPnl);
+                const pnlClass = Number.isFinite(realizedPnlValue)
+                  ? (realizedPnlValue < 0 ? 'is-negative' : 'is-positive')
+                  : 'is-empty';
                 const statusLabel = tradeStatusLabel(record.status);
                 const statusClass = `up-trade-history-status is-${record.status}`;
                 const localTime = formatLocalTradeTimestamp(record.createdAt);
@@ -101,6 +120,7 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
                   <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
                     <strong className="up-trade-history-pair">{symbol}</strong>
                     <span className="up-trade-history-margin">{margin ? `$${margin}` : '—'}</span>
+                    <span className={`up-trade-history-pnl ${pnlClass}`}>{realizedPnl}</span>
                     <div className="up-trade-history-result">
                       {record.txHash ? (
                         <a

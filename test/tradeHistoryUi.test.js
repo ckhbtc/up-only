@@ -47,21 +47,24 @@ test('trade history uses a compact flat activity ledger', async () => {
   assert.match(rowRule, /border-bottom:/);
 });
 
-test('trade history rows only show pair, dollar amount, and linked status', async () => {
+test('trade history rows show returned cash, realized pnl, and linked status', async () => {
   const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
-  const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-margin\s*\{([^}]*)\}/)?.[1] || '';
+  const valueRule = css.match(/\.up-trade-history-pair,\s*\.up-trade-history-margin,\s*\.up-trade-history-pnl\s*\{([^}]*)\}/)?.[1] || '';
   const amountRule = css.match(/\n\.up-trade-history-margin\s*\{\s*color:([^}]*)\}/)?.[0] || '';
   const statusRule = css.match(/\.up-trade-history-status\s*\{([^}]*)\}/)?.[1] || '';
   const resultRule = css.match(/\.up-trade-history-result\s*\{([^}]*)\}/)?.[1] || '';
 
   assert.match(modal, />Pair</);
   assert.match(modal, />Amount</);
+  assert.match(modal, />rPNL</);
   assert.doesNotMatch(modal, />Margin</);
   assert.match(modal, />Status</);
   assert.doesNotMatch(modal, />Transaction</);
   assert.doesNotMatch(modal, /shortTxHash/);
-  assert.match(modal, /formatUsdcBalance\(record\.stake\)/);
+  assert.match(modal, /record\.action === 'close' && record\.status === 'confirmed'/);
+  assert.match(modal, /\? record\.returnedAmount\s*: record\.stake/);
+  assert.match(modal, /formatSignedUsd\(record\.realizedPnl\)/);
   assert.match(modal, /\$\{margin\}/);
   assert.match(modal, /record\.txHash \? \([\s\S]*<a[\s\S]*className=\{statusClass\}/);
   assert.match(modal, /formatLocalTradeTimestamp\(record\.createdAt\)/);
