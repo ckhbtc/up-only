@@ -26,6 +26,8 @@
   --orange-dim: rgba(255, 138, 0, 0.16);
   --red: #e3261e;
   --red-dim: rgba(227, 38, 30, 0.14);
+  --neutral: #777777;
+  --neutral-dim: rgba(119, 119, 119, 0.16);
   --blue: #184fe8;
   --blue-grad: linear-gradient(135deg, #184fe8 0%, #00b866 100%);
   --yellow: #ffe24b;
@@ -62,6 +64,8 @@
   --orange-dim: rgba(255, 157, 50, 0.18);
   --red: #ff534a;
   --red-dim: rgba(255, 83, 74, 0.17);
+  --neutral: #a6aea7;
+  --neutral-dim: rgba(166, 174, 167, 0.18);
   --blue: #5376f5;
   --blue-grad: linear-gradient(135deg, #5376f5 0%, #25cf78 100%);
   --yellow: #e4c94f;
@@ -1002,6 +1006,11 @@ input:focus-visible {
 .up-heat.is-down {
   background: var(--red-dim);
   color: var(--red);
+}
+
+.up-heat.is-neutral {
+  background: var(--neutral-dim);
+  color: var(--neutral);
 }
 
 .up-price-row {

@@ -58,6 +58,27 @@ test('market card omits cash-down and position-size labels', () => {
   assert.match(markup, /aria-label="BTC UpOnly amount"/);
 });
 
+test('market card renders displayed zero change as neutral', () => {
+  const renderCard = change24h => renderToStaticMarkup(createElement(MarketCard, {
+    market: {
+      marketId: `0xbtc-${change24h}`,
+      symbol: 'BTC',
+      price: 100_000,
+      priceDecimals: 2,
+      maintenanceMarginRatio: 0.025,
+      initialMarginRatio: 0.1,
+      change24h,
+    },
+    balance: 10,
+  }));
+
+  for (const change24h of [0, -0.001]) {
+    const markup = renderCard(change24h);
+    assert.match(markup, /class="up-heat is-neutral">0\.00%/);
+    assert.doesNotMatch(markup, /class="up-heat is-down">-0\.00%/);
+  }
+});
+
 test('closed oracle badge exposes the warning as an accessible tooltip', () => {
   const markup = renderToStaticMarkup(createElement(OracleStaleBadgeView));
 

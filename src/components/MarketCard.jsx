@@ -36,7 +36,8 @@ export default function MarketCard({
   const [stake, setStake] = useState('');
   const price = Number(market.price) || 0;
   const priceDecimals = market.priceDecimals;
-  const isUp = Number(market.change24h || 0) >= 0;
+  const displayedChange = Number((Number(market.change24h) || 0).toFixed(2));
+  const changeState = displayedChange > 0 ? 'is-up' : displayedChange < 0 ? 'is-down' : 'is-neutral';
   const balanceNum = Number(balance || 0);
   const stakeNum = Number(stake) || 0;
   const maxConfig = useMemo(() => maxLongConfigForMarket(market), [market]);
@@ -171,8 +172,8 @@ export default function MarketCard({
             </div>
           </div>
         </div>
-        <div className={`up-heat ${isUp ? 'is-up' : 'is-down'}`}>
-          {isUp ? '+' : '-'}{Math.abs(Number(market.change24h || 0)).toFixed(2)}%
+        <div className={`up-heat ${changeState}`}>
+          {displayedChange > 0 ? '+' : displayedChange < 0 ? '-' : ''}{Math.abs(displayedChange).toFixed(2)}%
         </div>
       </div>
 
