@@ -5,10 +5,14 @@ import {
   listLocalTradeHistory,
   unlockAndFetchTradeHistory,
 } from '../services/tradeHistory.js';
-import { tradeHistoryDisplay } from '../services/tradeHistoryDisplay.js';
+import {
+  paginateTradeHistory,
+  tradeHistoryDisplay,
+} from '../services/tradeHistoryDisplay.js';
 import { formatLocalTradeTimestamp } from '../services/tradeHistoryTime.js';
 
 const HISTORY_REFRESH_MS = 5_000;
+const HISTORY_PAGE_SIZE = 5;
 
 function tradeStatusLabel(status) {
   if (status === 'confirmed') return 'Confirmed';
@@ -20,12 +24,14 @@ function tradeStatusLabel(status) {
 
 export default function TradeHistoryModal({ ethAddress, injAddress, markets = [], onClose }) {
   const [records, setRecords] = useState(() => listLocalTradeHistory(injAddress));
+  const [pageIndex, setPageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const marketNames = useMemo(() => new Map(markets.map(market => [
     market.marketId,
     market.symbol || market.ticker,
   ])), [markets]);
+  const page = paginateTradeHistory(records, pageIndex, HISTORY_PAGE_SIZE);
 
   const load = async () => {
     setLoading(true);
@@ -44,6 +50,7 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
   };
 
   useEffect(() => {
+    setPageIndex(0);
     void load();
   }, [ethAddress, injAddress]);
 
@@ -83,53 +90,76 @@ export default function TradeHistoryModal({ ethAddress, injAddress, markets = []
           )}
 
           {!loading && records.length > 0 && (
-            <div className="up-trade-history-list">
-              <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
-                <span>Pair</span>
-                <span>Action</span>
-                <span>Amount</span>
-                <span>rPNL</span>
-                <span>Status</span>
+            <>
+              <div className="up-trade-history-list">
+                <div className="up-trade-history-columns up-trade-history-columns-head" aria-hidden="true">
+                  <span>Pair</span>
+                  <span>Action</span>
+                  <span>Amount</span>
+                  <span>rPNL</span>
+                  <span>Status</span>
+                </div>
+                {page.records.map(record => {
+                  const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
+                  const display = tradeHistoryDisplay(record);
+                  const statusLabel = tradeStatusLabel(record.status);
+                  const statusClass = `up-trade-history-status is-${record.status}`;
+                  const localTime = formatLocalTradeTimestamp(record.createdAt);
+                  return (
+                    <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
+                      <strong className="up-trade-history-pair">{symbol}</strong>
+                      <span className={`up-trade-history-action ${display.actionClass}`}>{display.actionLabel}</span>
+                      <span className={`up-trade-history-amount ${display.amountClass}`}>{display.amount}</span>
+                      <span className={`up-trade-history-pnl ${display.realizedPnlClass}`}>{display.realizedPnl}</span>
+                      <div className="up-trade-history-result">
+                        {record.txHash ? (
+                          <a
+                            className={statusClass}
+                            href={txExplorerUrl(record.txHash)}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`${statusLabel} transaction`}
+                          >
+                            {statusLabel}
+                          </a>
+                        ) : (
+                          <span className={statusClass}>{statusLabel}</span>
+                        )}
+                        {localTime && (
+                          <time
+                            className="up-trade-history-time"
+                            dateTime={new Date(Number(record.createdAt)).toISOString()}
+                          >
+                            {localTime}
+                          </time>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-              {records.map(record => {
-                const symbol = record.symbol || marketNames.get(record.marketId) || 'Market';
-                const display = tradeHistoryDisplay(record);
-                const statusLabel = tradeStatusLabel(record.status);
-                const statusClass = `up-trade-history-status is-${record.status}`;
-                const localTime = formatLocalTradeTimestamp(record.createdAt);
-                return (
-                  <article key={record.cid} className="up-trade-history-row up-trade-history-columns">
-                    <strong className="up-trade-history-pair">{symbol}</strong>
-                    <span className={`up-trade-history-action ${display.actionClass}`}>{display.actionLabel}</span>
-                    <span className={`up-trade-history-amount ${display.amountClass}`}>{display.amount}</span>
-                    <span className={`up-trade-history-pnl ${display.realizedPnlClass}`}>{display.realizedPnl}</span>
-                    <div className="up-trade-history-result">
-                      {record.txHash ? (
-                        <a
-                          className={statusClass}
-                          href={txExplorerUrl(record.txHash)}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label={`${statusLabel} transaction`}
-                        >
-                          {statusLabel}
-                        </a>
-                      ) : (
-                        <span className={statusClass}>{statusLabel}</span>
-                      )}
-                      {localTime && (
-                        <time
-                          className="up-trade-history-time"
-                          dateTime={new Date(Number(record.createdAt)).toISOString()}
-                        >
-                          {localTime}
-                        </time>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+              {page.pageCount > 1 && (
+                <nav className="up-trade-history-pager" aria-label="Trade history pages">
+                  <span>{page.first}–{page.last} of {page.total}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPageIndex(page.pageIndex - 1)}
+                    disabled={page.pageIndex === 0}
+                    aria-label="Previous transactions"
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPageIndex(page.pageIndex + 1)}
+                    disabled={page.pageIndex >= page.pageCount - 1}
+                    aria-label="Next transactions"
+                  >
+                    ▶
+                  </button>
+                </nav>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -89,3 +89,18 @@ test('trade history rows separate amount and realized pnl with linked status', a
   assert.match(statusRule, /font-size:\s*13px/);
   assert.match(resultRule, /justify-items:\s*end/);
 });
+
+test('trade history shows five transactions per page with navigation controls', async () => {
+  const modal = await readFile(new URL('../src/components/TradeHistoryModal.jsx', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const pagerRule = css.match(/\.up-trade-history-pager\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(modal, /HISTORY_PAGE_SIZE\s*=\s*5/);
+  assert.match(modal, /paginateTradeHistory\(records, pageIndex, HISTORY_PAGE_SIZE\)/);
+  assert.match(modal, /page\.records\.map\(record =>/);
+  assert.match(modal, /aria-label="Previous transactions"/);
+  assert.match(modal, /aria-label="Next transactions"/);
+  assert.match(modal, /page\.first.*page\.last.*page\.total/s);
+  assert.match(pagerRule, /display:\s*flex/);
+  assert.match(pagerRule, /justify-content:\s*flex-end/);
+});
