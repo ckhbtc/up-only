@@ -838,7 +838,7 @@ export default function App() {
           </div>
           {markets.length === 0 && !loading && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-              {connected ? 'No markets available' : 'Connect your wallet to see live markets'}
+              UpOnly is currently undergoing scheduled maintenance. Please check back in a few minutes.
             </div>
           )}
         </main>
