@@ -109,6 +109,7 @@ export default function App() {
   const [appUpdateAvailable, setAppUpdateAvailable] = useState(false);
   const tradeLockRef = useRef(null);
   const marketCardRefs = useRef(new Map());
+  const marketCardRefCallbacks = useRef(new Map());
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState(readInitialTheme);
@@ -243,6 +244,16 @@ export default function App() {
       marketCardRefs.current.delete(marketId);
     }
   }, []);
+
+  const marketCardRefFor = useCallback((marketId) => {
+    if (!marketCardRefCallbacks.current.has(marketId)) {
+      marketCardRefCallbacks.current.set(
+        marketId,
+        node => setMarketCardRef(marketId, node),
+      );
+    }
+    return marketCardRefCallbacks.current.get(marketId);
+  }, [setMarketCardRef]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -818,7 +829,7 @@ export default function App() {
               return (
                 <MarketCard
                   key={market.id}
-                  cardRef={node => setMarketCardRef(marketRefId, node)}
+                  cardRef={marketCardRefFor(marketRefId)}
                   market={market}
                   balance={usdcBalance}
                   requestAddress={injAddress}

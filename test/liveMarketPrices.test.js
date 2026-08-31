@@ -3,7 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   LIVE_MARKET_STREAM_LIMIT,
+  LIVE_PRICE_BATCH_MS,
   applyLiveMarketPrice,
+  applyLiveMarketPrices,
+  createLivePriceBatcher,
   selectLiveMarketIds,
 } from '../src/services/liveMarketPrices.js';
 
@@ -41,6 +44,60 @@ test('live market prices update cards, cached marks, and position PnL', () => {
   assert.equal(next.positions[0].pnlPct, 10);
 });
 
+test('live price bursts flush once every 250ms with the latest price per market', () => {
+  const batches = [];
+  let scheduled = null;
+  let scheduledDelay = null;
+  const batcher = createLivePriceBatcher({
+    onBatch: batch => batches.push(batch),
+    schedule: (callback, delay) => {
+      scheduled = callback;
+      scheduledDelay = delay;
+      return 1;
+    },
+    cancel: () => {},
+  });
+
+  batcher.push({ marketId: 'BTC', price: '101' });
+  batcher.push({ marketId: 'ETH', price: '202' });
+  batcher.push({ marketId: 'btc', price: '103' });
+
+  assert.equal(scheduledDelay, LIVE_PRICE_BATCH_MS);
+  assert.equal(batches.length, 0);
+
+  scheduled();
+
+  assert.equal(batches.length, 1);
+  assert.deepEqual(batches[0], [
+    { marketId: 'btc', price: '103' },
+    { marketId: 'ETH', price: '202' },
+  ]);
+});
+
+test('batched market prices preserve unchanged market identity', () => {
+  const eth = { marketId: 'eth', price: 200 };
+  const state = {
+    markets: [
+      { marketId: 'btc', price: 100 },
+      eth,
+      { marketId: 'sol', price: 150 },
+    ],
+    prices: { btc: 100, eth: 200, sol: 150 },
+    livePrices: {},
+    positions: [],
+  };
+
+  const next = applyLiveMarketPrices(state, [
+    { marketId: 'BTC', price: '105' },
+    { marketId: 'SOL', price: '155' },
+  ]);
+
+  assert.equal(next.markets[1], eth);
+  assert.equal(next.markets[0].price, 105);
+  assert.equal(next.markets[2].price, 155);
+  assert.deepEqual(next.livePrices, { btc: 105, sol: 155 });
+});
+
 test('live market stream selects the top 40 markets by daily gain', () => {
   const markets = Array.from({ length: 45 }, (_, index) => ({
     marketId: `market-${index}`,
@@ -68,7 +125,9 @@ test('market store wires one oracle stream for the selected top markets', async 
 
   assert.match(serviceSource, /streamOraclePricesByMarkets/);
   assert.match(storeSource, /subscribeLiveMarketPrices/);
+  assert.match(storeSource, /createLivePriceBatcher/);
   assert.match(appSource, /selectLiveMarketIds\(markets\)/);
   assert.match(appSource, /startMarketPriceStream\(liveMarketIds\)/);
+  assert.match(appSource, /cardRef=\{marketCardRefFor\(marketRefId\)\}/);
   assert.match(appSource, /stopMarketPriceStream\(\)/);
 });

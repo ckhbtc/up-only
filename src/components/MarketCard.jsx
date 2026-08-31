@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import CoinLogo from './CoinLogo';
 import OracleStaleBadge from './OracleStaleBadge';
 import PriceText from './PriceText';
@@ -16,7 +16,7 @@ import {
   maxLongConfigForMarket,
 } from '../services/upOnly';
 
-export default function MarketCard({
+function MarketCard({
   cardRef = null,
   market,
   balance,
@@ -241,3 +241,5 @@ export default function MarketCard({
     </article>
   );
 }
+
+export default memo(MarketCard);

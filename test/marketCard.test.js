@@ -95,6 +95,10 @@ test('market card mark price uses the live ticker animation', () => {
   assert.match(markup, /class="up-live-mark-price up-card-live-mark-price"/);
 });
 
+test('market cards are memoized so unchanged cards skip parent rerenders', () => {
+  assert.equal(MarketCard.$$typeof, Symbol.for('react.memo'));
+});
+
 test('closed oracle badge exposes the warning as an accessible tooltip', () => {
   const markup = renderToStaticMarkup(createElement(OracleStaleBadgeView));
 

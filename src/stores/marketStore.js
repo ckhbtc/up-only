@@ -13,7 +13,8 @@ import {
   positionPollingActions,
 } from '../services/livePositionPrices';
 import {
-  applyLiveMarketPrice,
+  applyLiveMarketPrices,
+  createLivePriceBatcher,
   subscribeLiveMarketPrices,
 } from '../services/liveMarketPrices';
 import {
@@ -344,10 +345,14 @@ const useMarketStore = create((set, get) => ({
 
     get().markPriceSubscription?.();
     let stopped = false;
+    const batcher = createLivePriceBatcher({
+      onBatch: updates => set(state => applyLiveMarketPrices(state, updates)),
+    });
     const unsubscribe = subscribeLiveMarketPrices({
       marketIds,
-      onPrice: update => set(state => applyLiveMarketPrice(state, update)),
+      onPrice: batcher.push,
       onEnd: () => {
+        batcher.stop();
         if (!stopped) set({ markPriceSubscription: null, livePrices: {} });
       },
       onStatus: status => {
@@ -357,6 +362,7 @@ const useMarketStore = create((set, get) => ({
     const stop = () => {
       if (stopped) return;
       stopped = true;
+      batcher.stop();
       unsubscribe();
     };
     set({ markPriceSubscription: stop });
