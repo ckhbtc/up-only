@@ -36,6 +36,7 @@ export default function MarketCard({
   const [stake, setStake] = useState('');
   const price = Number(market.price) || 0;
   const priceDecimals = market.priceDecimals;
+  const priceLabel = formatPrice(price, priceDecimals);
   const displayedChange = Number((Number(market.change24h) || 0).toFixed(2));
   const changeState = displayedChange > 0 ? 'is-up' : displayedChange < 0 ? 'is-down' : 'is-neutral';
   const balanceNum = Number(balance || 0);
@@ -180,7 +181,11 @@ export default function MarketCard({
       <div className="up-price-row">
         <div className="up-price-panel">
           <span className="up-label">Mark Price</span>
-          <strong className="up-price">$<PriceText value={formatPrice(price, priceDecimals)} /></strong>
+          <strong className="up-price">
+            $<span key={priceLabel} className="up-live-mark-price up-card-live-mark-price">
+              <PriceText value={priceLabel} />
+            </span>
+          </strong>
         </div>
         <div className="up-price-panel up-price-panel-liq">
           <span className="up-label">Est Liq</span>

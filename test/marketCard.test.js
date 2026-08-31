@@ -79,6 +79,22 @@ test('market card renders displayed zero change as neutral', () => {
   }
 });
 
+test('market card mark price uses the live ticker animation', () => {
+  const markup = renderToStaticMarkup(createElement(MarketCard, {
+    market: {
+      marketId: '0xbtc-live',
+      symbol: 'BTC',
+      price: 100_000,
+      priceDecimals: 2,
+      maintenanceMarginRatio: 0.025,
+      initialMarginRatio: 0.1,
+    },
+    balance: 10,
+  }));
+
+  assert.match(markup, /class="up-live-mark-price up-card-live-mark-price"/);
+});
+
 test('closed oracle badge exposes the warning as an accessible tooltip', () => {
   const markup = renderToStaticMarkup(createElement(OracleStaleBadgeView));
 
