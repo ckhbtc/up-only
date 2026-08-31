@@ -44,7 +44,7 @@ test('live market prices update cards, cached marks, and position PnL', () => {
   assert.equal(next.positions[0].pnlPct, 10);
 });
 
-test('live price bursts flush once every 250ms with the latest price per market', () => {
+test('live price bursts flush once every 2 seconds with the latest price per market', () => {
   const batches = [];
   let scheduled = null;
   let scheduledDelay = null;
@@ -62,7 +62,8 @@ test('live price bursts flush once every 250ms with the latest price per market'
   batcher.push({ marketId: 'ETH', price: '202' });
   batcher.push({ marketId: 'btc', price: '103' });
 
-  assert.equal(scheduledDelay, LIVE_PRICE_BATCH_MS);
+  assert.equal(LIVE_PRICE_BATCH_MS, 2_000);
+  assert.equal(scheduledDelay, 2_000);
   assert.equal(batches.length, 0);
 
   scheduled();

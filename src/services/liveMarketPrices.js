@@ -5,7 +5,7 @@ import { sortMarketsForUpOnly } from './marketSort.js';
 
 const INDEXER_ENDPOINT = getNetworkEndpoints(Network.MainnetSentry).indexer;
 export const LIVE_MARKET_STREAM_LIMIT = 40;
-export const LIVE_PRICE_BATCH_MS = 250;
+export const LIVE_PRICE_BATCH_MS = 2_000;
 
 export function selectLiveMarketIds(markets) {
   return sortMarketsForUpOnly(markets || [])
