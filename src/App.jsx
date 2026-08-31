@@ -26,6 +26,7 @@ import {
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
 import { marketsMatchingSearch } from './services/marketSearch';
 import { sortMarketsForUpOnly } from './services/marketSort';
+import { selectLiveMarketIds } from './services/liveMarketPrices';
 import { shouldOpenPairSearch } from './services/pairSearchShortcut';
 import { closePositionsSequentially } from './services/closeAllPositions';
 import { createTradeLock } from './services/tradeLock';
@@ -169,7 +170,8 @@ export default function App() {
   const session = useSessionStore();
   const visiblePositions = useMemo(() => positions.filter(isUpOnlyPosition), [positions]);
   const sortedMarkets = useMemo(() => sortMarketsForUpOnly(markets), [markets]);
-  const marketIdsKey = useMemo(() => markets.map(market => market.marketId).join(','), [markets]);
+  const liveMarketIds = useMemo(() => selectLiveMarketIds(markets), [markets]);
+  const liveMarketIdsKey = liveMarketIds.join(',');
   const searchMatches = useMemo(() => (
     marketsMatchingSearch(sortedMarkets, searchQuery)
   ), [sortedMarkets, searchQuery]);
@@ -360,10 +362,10 @@ export default function App() {
   }, [connected, injAddress, refreshBalances]);
 
   useEffect(() => {
-    if (!marketIdsKey) return undefined;
-    startMarketPriceStream();
+    if (!liveMarketIdsKey) return undefined;
+    startMarketPriceStream(liveMarketIds);
     return () => stopMarketPriceStream();
-  }, [marketIdsKey, startMarketPriceStream, stopMarketPriceStream]);
+  }, [liveMarketIdsKey, startMarketPriceStream, stopMarketPriceStream]);
 
   const markCardOpened = useCallback((marketId) => {
     setOpenedCards(state => ({ ...state, [marketId]: true }));

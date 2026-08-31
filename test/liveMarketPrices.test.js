@@ -1,7 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyLiveMarketPrice } from '../src/services/liveMarketPrices.js';
+import {
+  LIVE_MARKET_STREAM_LIMIT,
+  applyLiveMarketPrice,
+  selectLiveMarketIds,
+} from '../src/services/liveMarketPrices.js';
 
 test('live market prices update cards, cached marks, and position PnL', () => {
   const state = {
@@ -37,7 +41,25 @@ test('live market prices update cards, cached marks, and position PnL', () => {
   assert.equal(next.positions[0].pnlPct, 10);
 });
 
-test('market store wires one oracle stream for all visible markets', async () => {
+test('live market stream selects the top 40 markets by daily gain', () => {
+  const markets = Array.from({ length: 45 }, (_, index) => ({
+    marketId: `market-${index}`,
+    change24h: index - 20,
+  }));
+
+  const marketIds = selectLiveMarketIds(markets);
+
+  assert.equal(marketIds.length, LIVE_MARKET_STREAM_LIMIT);
+  assert.deepEqual(marketIds.slice(0, 3), ['market-44', 'market-43', 'market-42']);
+  assert.deepEqual(marketIds.slice(-3), ['market-7', 'market-6', 'market-5']);
+  assert.deepEqual(markets.slice(0, 3).map(market => market.marketId), [
+    'market-0',
+    'market-1',
+    'market-2',
+  ]);
+});
+
+test('market store wires one oracle stream for the selected top markets', async () => {
   const [storeSource, serviceSource, appSource] = await Promise.all([
     readFile(new URL('../src/stores/marketStore.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/services/liveMarketPrices.js', import.meta.url), 'utf8'),
@@ -46,6 +68,7 @@ test('market store wires one oracle stream for all visible markets', async () =>
 
   assert.match(serviceSource, /streamOraclePricesByMarkets/);
   assert.match(storeSource, /subscribeLiveMarketPrices/);
-  assert.match(appSource, /startMarketPriceStream\(\)/);
+  assert.match(appSource, /selectLiveMarketIds\(markets\)/);
+  assert.match(appSource, /startMarketPriceStream\(liveMarketIds\)/);
   assert.match(appSource, /stopMarketPriceStream\(\)/);
 });

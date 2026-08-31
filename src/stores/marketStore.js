@@ -339,8 +339,7 @@ const useMarketStore = create((set, get) => ({
     }
   },
 
-  startMarketPriceStream: () => {
-    const marketIds = get().markets.map(market => market.marketId).filter(Boolean);
+  startMarketPriceStream: (marketIds = []) => {
     if (marketIds.length === 0) return;
 
     get().markPriceSubscription?.();
