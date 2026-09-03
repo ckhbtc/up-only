@@ -19,6 +19,8 @@
   --accent-light: #b8ff2c;
   --accent-dim: rgba(0, 184, 102, 0.18);
   --accent-grad: linear-gradient(135deg, #d9ff38 0%, #00b866 100%);
+  --gain-badge-bg: #b8ff2c;
+  --gain-badge-text: #008f4f;
   --on-accent: #101014;
   --green: #008f4f;
   --green-dim: rgba(0, 143, 79, 0.16);
@@ -58,6 +60,8 @@
   --accent-light: #9fe34a;
   --accent-dim: rgba(37, 207, 120, 0.2);
   --accent-grad: linear-gradient(135deg, #9fe34a 0%, #25cf78 100%);
+  --gain-badge-bg: #153d29;
+  --gain-badge-text: #6ee7a8;
   --on-accent: #07100a;
   --green: #21c978;
   --green-dim: rgba(33, 201, 120, 0.2);
@@ -1041,11 +1045,11 @@ input:focus-visible {
 }
 
 .up-heat {
-  background: var(--accent-light);
+  background: var(--gain-badge-bg);
   border: 3px solid var(--border);
   border-radius: 6px;
   box-shadow: 3px 3px 0 var(--border);
-  color: var(--green);
+  color: var(--gain-badge-text);
   flex: 0 0 auto;
   font-family: var(--font-heading);
   font-size: 16px;

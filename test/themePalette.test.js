@@ -52,3 +52,14 @@ test('dark mode mark prices use a lighter blue than the interface accent', async
   assert.ok(relativeLuminance(dark['price-blue']) > relativeLuminance(dark.blue));
   assert.ok(contrastRatio(dark['price-blue'], dark['bg-card']) >= 4.5);
 });
+
+test('dark mode gain badges use a restrained high-contrast green palette', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const dark = themeVariables(css, '[data-theme="bauhaus-dark"]');
+  const gainRule = css.match(/\.up-heat\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(gainRule, /background:\s*var\(--gain-badge-bg\)\s*;/);
+  assert.match(gainRule, /color:\s*var\(--gain-badge-text\)\s*;/);
+  assert.ok(relativeLuminance(dark['gain-badge-bg']) < relativeLuminance(dark['accent-light']));
+  assert.ok(contrastRatio(dark['gain-badge-text'], dark['gain-badge-bg']) >= 4.5);
+});
