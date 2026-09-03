@@ -707,10 +707,21 @@ input:focus-visible {
   border: 0;
   color: var(--text-muted);
   display: inline-flex;
-  font: 400 22px/1 var(--font-heading);
   justify-content: center;
+  line-height: 0;
   padding: 0;
   width: 32px;
+}
+
+.market-sort-icon {
+  display: block;
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 2;
+  width: 18px;
 }
 
 .market-sort-seg + .market-sort-seg {

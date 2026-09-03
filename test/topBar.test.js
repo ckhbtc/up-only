@@ -86,9 +86,18 @@ test('header exposes gainers and losers ranking controls beside the theme toggle
   assert.match(markup, /aria-label="Market ranking"/);
   assert.match(markup, /aria-pressed="false" aria-label="Top gainers"/);
   assert.match(markup, /aria-pressed="true" aria-label="Top losers"/);
-  assert.match(markup, /aria-hidden="true">↑<\/span>/);
-  assert.match(markup, /aria-hidden="true">↓<\/span>/);
+  assert.equal((markup.match(/class="market-sort-icon"/g) || []).length, 2);
+  assert.match(markup, /class="market-sort-icon" viewBox="0 0 20 20" aria-hidden="true"/);
   assert.ok(markup.indexOf('aria-label="Theme"') < markup.indexOf('aria-label="Market ranking"'));
+});
+
+test('market ranking icons use fixed centered geometry instead of font glyphs', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const iconRule = css.match(/\.market-sort-icon\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(iconRule, /display:\s*block\s*;/);
+  assert.match(iconRule, /height:\s*18px\s*;/);
+  assert.match(iconRule, /width:\s*18px\s*;/);
 });
 
 test('header actions share one fixed control height', async () => {

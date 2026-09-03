@@ -37,6 +37,18 @@ function SearchIcon() {
   );
 }
 
+function MarketSortIcon({ direction }) {
+  const path = direction === 'down'
+    ? 'M10 4v12m-5-5 5 5 5-5'
+    : 'M10 16V4M5 9l5-5 5 5';
+
+  return (
+    <svg className="market-sort-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <path d={path} />
+    </svg>
+  );
+}
+
 export default function TopBar({
   theme,
   onSetTheme,
@@ -256,7 +268,7 @@ export default function TopBar({
               aria-label="Top gainers"
               title="Top gainers"
             >
-              <span aria-hidden="true">↑</span>
+              <MarketSortIcon direction="up" />
             </button>
             <button
               type="button"
@@ -266,7 +278,7 @@ export default function TopBar({
               aria-label="Top losers"
               title="Top losers"
             >
-              <span aria-hidden="true">↓</span>
+              <MarketSortIcon direction="down" />
             </button>
           </div>
 
