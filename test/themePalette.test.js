@@ -42,3 +42,13 @@ test('dark mode uses dark surfaces with readable text and no light first paint',
   assert.equal(firstPaint?.[1].toLowerCase(), dark['bg-primary']);
   assert.equal(firstPaint?.[2].toLowerCase(), dark['text-primary']);
 });
+
+test('dark mode mark prices use a lighter blue than the interface accent', async () => {
+  const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const dark = themeVariables(css, '[data-theme="bauhaus-dark"]');
+  const priceRule = css.match(/\.up-price\s*\{([^}]*)\}/)?.[1] || '';
+
+  assert.match(priceRule, /color:\s*var\(--price-blue\)\s*;/);
+  assert.ok(relativeLuminance(dark['price-blue']) > relativeLuminance(dark.blue));
+  assert.ok(contrastRatio(dark['price-blue'], dark['bg-card']) >= 4.5);
+});
