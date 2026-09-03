@@ -7,8 +7,8 @@ const INDEXER_ENDPOINT = getNetworkEndpoints(Network.MainnetSentry).indexer;
 export const LIVE_MARKET_STREAM_LIMIT = 40;
 export const LIVE_PRICE_BATCH_MS = 2_000;
 
-export function selectLiveMarketIds(markets) {
-  return sortMarketsForUpOnly(markets || [])
+export function selectLiveMarketIds(markets, sortMode) {
+  return sortMarketsForUpOnly(markets || [], sortMode)
     .map(market => market.marketId)
     .filter(Boolean)
     .slice(0, LIVE_MARKET_STREAM_LIMIT);

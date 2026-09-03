@@ -40,6 +40,8 @@ function SearchIcon() {
 export default function TopBar({
   theme,
   onSetTheme,
+  marketSortMode = 'gainers',
+  onSetMarketSortMode,
   searchOpen,
   searchQuery,
   searchMatches = [],
@@ -159,7 +161,7 @@ export default function TopBar({
                 <div className="up-search-dropdown">
                   <div className="up-search-dropdown-head">
                     <span>{searchMatches.length} pairs match &quot;{searchQuery.trim()}&quot;</span>
-                    <span>hottest first</span>
+                    <span>{marketSortMode} first</span>
                   </div>
 
                   {searchMatches.length > 0 ? (
@@ -244,6 +246,28 @@ export default function TopBar({
                 <ThemeIcon icon={seg.icon} />
               </button>
             ))}
+          </div>
+          <div className="market-sort-toggle" role="group" aria-label="Market ranking">
+            <button
+              type="button"
+              className={`market-sort-seg is-gainers ${marketSortMode === 'gainers' ? 'on' : ''}`}
+              onClick={() => onSetMarketSortMode?.('gainers')}
+              aria-pressed={marketSortMode === 'gainers'}
+              aria-label="Top gainers"
+              title="Top gainers"
+            >
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button
+              type="button"
+              className={`market-sort-seg is-losers ${marketSortMode === 'losers' ? 'on' : ''}`}
+              onClick={() => onSetMarketSortMode?.('losers')}
+              aria-pressed={marketSortMode === 'losers'}
+              aria-label="Top losers"
+              title="Top losers"
+            >
+              <span aria-hidden="true">↓</span>
+            </button>
           </div>
 
           {connected ? (

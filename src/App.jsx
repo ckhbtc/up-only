@@ -25,7 +25,11 @@ import {
 } from './services/rfq';
 import { RFQ_PREQUOTE_INTERVAL_MS } from './services/rfqConstants';
 import { marketsMatchingSearch } from './services/marketSearch';
-import { sortMarketsForUpOnly } from './services/marketSort';
+import {
+  MARKET_SORT_GAINERS,
+  normalizeMarketSortMode,
+  sortMarketsForUpOnly,
+} from './services/marketSort';
 import { selectLiveMarketIds } from './services/liveMarketPrices';
 import { shouldOpenPairSearch } from './services/pairSearchShortcut';
 import { closePositionsSequentially } from './services/closeAllPositions';
@@ -48,6 +52,17 @@ import {
   UP_ONLY_TARGET_MODE,
   isUpOnlyPosition,
 } from './services/upOnly';
+
+const MARKET_SORT_STORAGE_KEY = 'up-only-market-sort';
+
+function readInitialMarketSortMode() {
+  if (typeof localStorage === 'undefined') return MARKET_SORT_GAINERS;
+  try {
+    return normalizeMarketSortMode(localStorage.getItem(MARKET_SORT_STORAGE_KEY));
+  } catch {
+    return MARKET_SORT_GAINERS;
+  }
+}
 
 function latestCachedPrice(marketId, fallback = null) {
   const state = useMarketStore.getState();
@@ -113,6 +128,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState(readInitialTheme);
+  const [marketSortMode, setMarketSortMode] = useState(readInitialMarketSortMode);
   const [devMode, setDevMode] = useState(() => {
     if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem('up-only-dev-mode') === '1';
@@ -133,6 +149,14 @@ export default function App() {
   const setThemeTo = useCallback((next) => {
     if (THEMES.includes(next)) setTheme(next);
   }, []);
+
+  const setMarketSortTo = useCallback((next) => {
+    setMarketSortMode(normalizeMarketSortMode(next));
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(MARKET_SORT_STORAGE_KEY, marketSortMode); } catch { /* ignore */ }
+  }, [marketSortMode]);
 
   // D-E-V keystroke (sequence within ~1.5s, ignored while typing in form fields) toggles devMode.
   useEffect(() => {
@@ -170,8 +194,14 @@ export default function App() {
   } = useMarketStore();
   const session = useSessionStore();
   const visiblePositions = useMemo(() => positions.filter(isUpOnlyPosition), [positions]);
-  const sortedMarkets = useMemo(() => sortMarketsForUpOnly(markets), [markets]);
-  const liveMarketIds = useMemo(() => selectLiveMarketIds(markets), [markets]);
+  const sortedMarkets = useMemo(
+    () => sortMarketsForUpOnly(markets, marketSortMode),
+    [markets, marketSortMode],
+  );
+  const liveMarketIds = useMemo(
+    () => selectLiveMarketIds(markets, marketSortMode),
+    [markets, marketSortMode],
+  );
   const liveMarketIdsKey = liveMarketIds.join(',');
   const searchMatches = useMemo(() => (
     marketsMatchingSearch(sortedMarkets, searchQuery)
@@ -775,6 +805,8 @@ export default function App() {
       <TopBar
         theme={theme}
         onSetTheme={setThemeTo}
+        marketSortMode={marketSortMode}
+        onSetMarketSortMode={setMarketSortTo}
         searchOpen={searchOpen}
         searchQuery={searchQuery}
         searchMatches={searchMatches}

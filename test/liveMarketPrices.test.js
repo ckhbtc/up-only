@@ -117,6 +117,19 @@ test('live market stream selects the top 40 markets by daily gain', () => {
   ]);
 });
 
+test('live market stream selects the top 40 markets by daily loss in losers mode', () => {
+  const markets = Array.from({ length: 45 }, (_, index) => ({
+    marketId: `market-${index}`,
+    change24h: index - 20,
+  }));
+
+  const marketIds = selectLiveMarketIds(markets, 'losers');
+
+  assert.equal(marketIds.length, LIVE_MARKET_STREAM_LIMIT);
+  assert.deepEqual(marketIds.slice(0, 3), ['market-0', 'market-1', 'market-2']);
+  assert.deepEqual(marketIds.slice(-3), ['market-37', 'market-38', 'market-39']);
+});
+
 test('market store wires one oracle stream for the selected top markets', async () => {
   const [storeSource, serviceSource, appSource] = await Promise.all([
     readFile(new URL('../src/stores/marketStore.js', import.meta.url), 'utf8'),
@@ -127,7 +140,7 @@ test('market store wires one oracle stream for the selected top markets', async 
   assert.match(serviceSource, /streamOraclePricesByMarkets/);
   assert.match(storeSource, /subscribeLiveMarketPrices/);
   assert.match(storeSource, /createLivePriceBatcher/);
-  assert.match(appSource, /selectLiveMarketIds\(markets\)/);
+  assert.match(appSource, /selectLiveMarketIds\(markets, marketSortMode\)/);
   assert.match(appSource, /startMarketPriceStream\(liveMarketIds\)/);
   assert.match(appSource, /cardRef=\{marketCardRefFor\(marketRefId\)\}/);
   assert.match(appSource, /stopMarketPriceStream\(\)/);

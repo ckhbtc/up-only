@@ -64,6 +64,33 @@ test('header uses the UpOnly brand logo', () => {
   assert.match(markup, /class="up-logo-image" src="\/uponlylogo\.png"/);
 });
 
+test('header exposes gainers and losers ranking controls beside the theme toggle', () => {
+  const markup = renderToStaticMarkup(createElement(TopBar, {
+    theme: 'bauhaus',
+    onSetTheme: () => {},
+    marketSortMode: 'losers',
+    onSetMarketSortMode: () => {},
+    searchOpen: false,
+    searchQuery: '',
+    onOpenSearch: () => {},
+    onCloseSearch: () => {},
+    onSearchQueryChange: () => {},
+    onSelectSearchResult: () => {},
+    onAddFunds: () => {},
+    onRevokeAutosign: () => {},
+    sessionActive: false,
+    revokingAutosign: false,
+    devMode: false,
+  }));
+
+  assert.match(markup, /aria-label="Market ranking"/);
+  assert.match(markup, /aria-pressed="false" aria-label="Top gainers"/);
+  assert.match(markup, /aria-pressed="true" aria-label="Top losers"/);
+  assert.match(markup, /aria-hidden="true">↑<\/span>/);
+  assert.match(markup, /aria-hidden="true">↓<\/span>/);
+  assert.ok(markup.indexOf('aria-label="Theme"') < markup.indexOf('aria-label="Market ranking"'));
+});
+
 test('header actions share one fixed control height', async () => {
   const css = await readFile(new URL('../src/styles/global.css', import.meta.url), 'utf8');
   const controlHeight = css.match(/--header-control-height:\s*([^;]+);/)?.[1];
@@ -82,6 +109,7 @@ test('header actions share one fixed control height', async () => {
     '.up-add-cash',
     '.up-connect',
     '.theme-toggle',
+    '.market-sort-toggle',
     '.wallet-menu-trigger',
   ]) {
     const usesSharedHeight = rules.some(rule => (
